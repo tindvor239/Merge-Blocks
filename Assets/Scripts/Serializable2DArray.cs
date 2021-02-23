@@ -17,19 +17,17 @@ public class Serializable2DArray
     }
     public Serializable2DArray(int rowRange)
     {
-        rows = new List<RowOfObjects>();
         rows = new RowOfObjects[rowRange].ToList();
     }
     public Serializable2DArray(int rowRange, int columnRange)
     {
-        rows = new List<RowOfObjects>();
-        rows = new RowOfObjects[rowRange].ToList();
+        RowOfObjects[] rows = new RowOfObjects[rowRange];
+        this.rows = rows.ToList();
         for (int i = 0; i < rowRange; i++)
         {
             RowOfObjects row = new RowOfObjects(columnRange);
             row.name = i.ToString();
-            rows.Add(row);
-            Debug.Log("In");
+            this.rows.Add(row);
         }
     }
     #endregion

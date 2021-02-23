@@ -33,7 +33,7 @@ public class Gameplay : Singleton<Gameplay>
         grid = StandaloneGrid.Instance;
         poolParty = PoolParty.Instance;
 
-        ChangeCurrentBlock();
+        ChangeControlledBlock();
     }
 
     // Update is called once per frame
@@ -42,13 +42,14 @@ public class Gameplay : Singleton<Gameplay>
         if (Input.GetMouseButton(0))
         {
             snaper.Snaping();
+            snaper.onSnaping += OnSnaping;
         }
 
         //This event will called once when event is called.
         if(onHitEvent != null)
         {
             onHitEvent.Invoke();
-            ChangeCurrentBlock();
+            ChangeControlledBlock();
             onHitEvent = null;
         }
     }
@@ -68,7 +69,24 @@ public class Gameplay : Singleton<Gameplay>
             }
         }
     }
-    private void ChangeCurrentBlock()
+
+    private void OnSnaping(int index)
+    {
+        for(int row = 0; row < blocks.Rows.Count; row++)
+        {
+            for(int column = 0; column < blocks.Rows[row].Columns.Count; column++)
+            {
+                if (blocks.Rows[row].Columns[column] == controlledBlock.gameObject)
+                {
+                    Debug.Log($"get it self \nrow: {row}, column: {column}");
+                    blocks.Rows[row].Columns[column] = null;
+                }
+            }
+        }
+        blocks.Rows[0].Columns[index] = controlledBlock.gameObject;
+        Debug.Log($"index: {index}");
+    }
+    private void ChangeControlledBlock()
     {
         //To do: spawn another block to control.
         controlledBlock = CreateControlledBlock();

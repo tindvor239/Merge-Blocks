@@ -56,23 +56,39 @@ public class Block : MonoBehaviour
             rigidbody.position -= gravityMultiplier * Gravity * (Vector2)transform.up * Time.deltaTime;
         }
     }
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        //isHit = true;
-        Debug.Log(collision.gameObject.name);
-        gameplay.onHitEvent += RemoveCurrentBlock;
-        gravityMultiplier = slowGravityMultiplier;
-    }
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        isHit = true;
+        //isHit = true;
+        if(collision.tag != "Block")
+        {
+            Debug.Log(collision.gameObject.name);
+            isHit = true;
+            gameplay.onHitEvent += OnHit;
+            gravityMultiplier = slowGravityMultiplier;
+        }
     }
+    //private void OnTriggerEnter2D(Collider2D collision)
+    //{
+    //    Serializable2DArray tiles = StandaloneGrid.Instance.Tiles;
+    //    Serializable2DArray blocks = Gameplay.Instance.Blocks;
+    //    for (int row = tiles.Rows.Count - 1; row >= 0; row--)
+    //    {
+    //        for (int column = tiles.Rows[row].Columns.Count - 1; column >= 0; column--)
+    //        {
+    //            if(tiles.Rows[row].Columns[column] == collision.gameObject && blocks.Rows[row].Columns[column] == null)
+    //            {
+    //                Debug.Log($"hit at\nRow: {row}, Column: {column} ");
+    //            }
+    //        }
+    //    }
+
+    //}
     public void Push()
     {
         gravityMultiplier = normalGravityMultiplier;
     }
 
-    private void RemoveCurrentBlock()
+    private void OnHit()
     {
         gameplay.controlledBlock = null;
     }

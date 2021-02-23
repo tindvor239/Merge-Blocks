@@ -18,8 +18,11 @@ public class Snaper : Singleton<Snaper>
     public static Vector2 StartPosition
     {
         get => startPosition;
-    }    
+    }
     #endregion
+
+    public delegate void OnSnaping(int index);
+    public event OnSnaping onSnaping;
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
     {
@@ -31,6 +34,7 @@ public class Snaper : Singleton<Snaper>
     {
         if (snapPositions.Count != 0)
         {
+            int index = 0;
             for(int i = 0; i < snapPositions.Count; i++)
             {
                 if(snapPositions[i] != null)
@@ -39,6 +43,9 @@ public class Snaper : Singleton<Snaper>
                     {
                         nearestDistance = Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, snapPositions[i].transform.position.y)), snapPositions[i].transform.position);
                         nearestPosition = new Vector2(snapPositions[i].transform.position.x, nearestPosition.y);
+
+                        //Get index on snaping.
+                        index = i;
                     }
                     else
                     {
@@ -46,9 +53,17 @@ public class Snaper : Singleton<Snaper>
                         {
                             nearestDistance = Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, snapPositions[i].transform.position.y)), snapPositions[i].transform.position);
                             nearestPosition = new Vector2(snapPositions[i].transform.position.x, nearestPosition.y);
+
+                            //Get index on snaping.
+                            index = i;
                         }
                     }
                 }
+            }
+            if(onSnaping != null)
+            {
+                onSnaping.Invoke(index);
+                onSnaping = null;
             }
         }
         return nearestPosition;

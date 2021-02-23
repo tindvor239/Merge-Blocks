@@ -14,13 +14,15 @@ public class StandaloneGrid : Singleton<StandaloneGrid>
     private static float defaultSpace = 0.19f;
     private static float size = 1.3f;
     private byte lastRow = 0, lastColumn = 0;
-    private List<GameObject> tiles;
     [SerializeField]
-    private ObjectPool tilesPool = new ObjectPool("Tiles Pool");
+    private Serializable2DArray tiles;
+    //[SerializeField]
+    //private ObjectPool tilesPool = new ObjectPool("Tiles Pool");
 
     #region Properties
     public byte Row { get => row; }
     public byte Column { get => column; }
+    public Serializable2DArray Tiles { get => tiles; }
     #endregion
 
     // Awake is called when the script instance is being loaded.
@@ -54,61 +56,61 @@ public class StandaloneGrid : Singleton<StandaloneGrid>
 
     private void OnInspectorFieldsChanged()
     {
-        SpawnGrid();
+        //SpawnGrid();
     }
-    private void SpawnGrid()
-    {
-        if(lastRow != row || lastColumn != column)
-        {
-            ClearGrid();
-            tiles = new List<GameObject>();
-            for (byte row = 0; row < this.row; row++)
-            {
-                for(byte column = 0; column < this.column; column++)
-                {
-                    GameObject pooledObject = tilesPool.GetPooledObject();
+    //private void SpawnGrid()
+    //{
+    //    if(lastRow != row || lastColumn != column)
+    //    {
+    //        ClearGrid();
+    //        tiles = new List<GameObject>();
+    //        for (byte row = 0; row < this.row; row++)
+    //        {
+    //            for(byte column = 0; column < this.column; column++)
+    //            {
+    //                GameObject pooledObject = tilesPool.GetPooledObject();
 
-                    if (pooledObject != null)
-                    {
-                        Debug.Log("In");
-                        pooledObject.SetActive(true);
-                    }
-                    else
-                    {
-                        pooledObject = Instantiate(tilesPool.ObjectToPool, transform);
-                        tilesPool.PooledObjects.Add(pooledObject);
-                    }
-                    pooledObject.transform.position = GetTilePosition(row, column);
-                    pooledObject.transform.localScale = new Vector2(size, size);
-                    tiles.Add(pooledObject);
-                }
-            }
-            if (lastColumn != column)
-                lastColumn = column;
-            if (lastRow != row)
-                lastRow = row;
-        }
-    }
-    private void ClearGrid()
-    {
-        if(tiles != null)
-        {
-            foreach (GameObject tile in tiles)
-            {
-                if (tile != null)
-                {
-                    Debug.Log(tile);
-                    tile.SetActive(false);
-                }
-            }
-            tiles.Clear();
-        }
-    }
-    private Vector2 GetTilePosition(int row, int column)
-    {
-        Vector2 result = new Vector2();
-        result.x = ((column - (this.column / 2)) * defaultSpace) + defaultPosition.x;
-        result.y = ((row - (this.row / 2)) * defaultSpace) + defaultPosition.y;
-        return result;
-    }
+    //                if (pooledObject != null)
+    //                {
+    //                    Debug.Log("In");
+    //                    pooledObject.SetActive(true);
+    //                }
+    //                else
+    //                {
+    //                    pooledObject = Instantiate(tilesPool.ObjectToPool, transform);
+    //                    tilesPool.PooledObjects.Add(pooledObject);
+    //                }
+    //                pooledObject.transform.position = GetTilePosition(row, column);
+    //                pooledObject.transform.localScale = new Vector2(size, size);
+    //                tiles.Add(pooledObject);
+    //            }
+    //        }
+    //        if (lastColumn != column)
+    //            lastColumn = column;
+    //        if (lastRow != row)
+    //            lastRow = row;
+    //    }
+    //}
+    //private void ClearGrid()
+    //{
+    //    if(tiles != null)
+    //    {
+    //        foreach (GameObject tile in tiles)
+    //        {
+    //            if (tile != null)
+    //            {
+    //                Debug.Log(tile);
+    //                tile.SetActive(false);
+    //            }
+    //        }
+    //        tiles.Clear();
+    //    }
+    //}
+    //private Vector2 GetTilePosition(int row, int column)
+    //{
+    //    Vector2 result = new Vector2();
+    //    result.x = ((column - (this.column / 2)) * defaultSpace) + defaultPosition.x;
+    //    result.y = ((row - (this.row / 2)) * defaultSpace) + defaultPosition.y;
+    //    return result;
+    //}
 }
