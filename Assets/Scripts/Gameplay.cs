@@ -1,19 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 public class Gameplay : Singleton<Gameplay>
 {
-    private Snaper snaper;
-    private Grid grid;
-
+    [Header("Blocks")]
     [SerializeField]
-    private GameObject blockPrefab = null;
-    private Block currentBlock = null;
+    private Serializable2DArray blocks = null;
 
-    public delegate void OnChangeBlock();
-    public event OnChangeBlock onChangeBlock;
+    private Snaper snaper;
+    private StandaloneGrid grid;
+    private PoolParty poolParty;
+
+    public delegate void OnHitDelegate();
+    public event OnHitDelegate onHitEvent;
+
+    #region Properties
+    public Block controlledBlock { get; set; }
+    public Serializable2DArray Blocks { get => blocks; }
+    #endregion
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
     {
@@ -25,12 +30,10 @@ public class Gameplay : Singleton<Gameplay>
     private void Start()
     {
         snaper = Snaper.Instance;
-        grid = Grid.Instance;
-        if(blockPrefab != null)
-        {
-            currentBlock = Instantiate(blockPrefab).GetComponent<Block>();
-            currentBlock.transform.position = Snaper.StartPosition;
-        }
+        grid = StandaloneGrid.Instance;
+        poolParty = PoolParty.Instance;
+
+        ChangeCurrentBlock();
     }
 
     // Update is called once per frame
@@ -40,17 +43,51 @@ public class Gameplay : Singleton<Gameplay>
         {
             snaper.Snaping();
         }
+
+        //This event will called once when event is called.
+        if(onHitEvent != null)
+        {
+            onHitEvent.Invoke();
+            ChangeCurrentBlock();
+            onHitEvent = null;
+        }
     }
 
     private void LateUpdate()
     {
-        currentBlock.transform.position = new Vector2(snaper.NearestPosition.x, currentBlock.transform.position.y);
-        if(Input.GetMouseButton(0))
+        if(controlledBlock != null && controlledBlock.IsHit == false)
         {
-            if(Input.GetMouseButtonUp(0))
+            controlledBlock.transform.position = new Vector2(snaper.NearestPosition.x, controlledBlock.transform.position.y);
+        }
+        if(Input.GetMouseButtonUp(0))
+        {
+            //To do Block will be drop.
+            if(controlledBlock != null)
             {
-                //To do Block will be drop.
+                controlledBlock.Push();
             }
         }
+    }
+    private void ChangeCurrentBlock()
+    {
+        //To do: spawn another block to control.
+        controlledBlock = CreateControlledBlock();
+        if(controlledBlock != null)
+        {
+            controlledBlock.transform.position = Snaper.StartPosition;
+        }
+    }
+    private Block CreateControlledBlock()
+    {
+        ObjectPool objectPool = poolParty.GetPool("Blocks Pool");
+        if (objectPool != null && objectPool.ObjectToPool != null)
+        {
+            Block block = objectPool.CreatePooledObject().GetComponent<Block>();
+            if (block != null)
+            {
+                return block;
+            }
+        }
+        return null;
     }
 }

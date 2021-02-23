@@ -13,6 +13,8 @@ public class Block : MonoBehaviour
     private static float slowGravityMultiplier = 0.01f, normalGravityMultiplier = 1f;
     private static float gravityMultiplier = slowGravityMultiplier;
     private new Rigidbody2D rigidbody;
+
+    private Gameplay gameplay;
     #region Properties
     public static float Gravity { get => 9.81f; }
     public uint Point
@@ -37,10 +39,15 @@ public class Block : MonoBehaviour
             }
         }
     }
+    public bool IsHit { get => isHit; }
     #endregion
     private void Awake()
     {
         rigidbody = GetComponent<Rigidbody2D>();
+    }
+    private void Start()
+    {
+        gameplay = Gameplay.Instance;
     }
     private void FixedUpdate()
     {
@@ -49,13 +56,24 @@ public class Block : MonoBehaviour
             rigidbody.position -= gravityMultiplier * Gravity * (Vector2)transform.up * Time.deltaTime;
         }
     }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        //isHit = true;
+        Debug.Log(collision.gameObject.name);
+        gameplay.onHitEvent += RemoveCurrentBlock;
+        gravityMultiplier = slowGravityMultiplier;
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        isHit = true;
+    }
     public void Push()
     {
         gravityMultiplier = normalGravityMultiplier;
     }
-    private void OnCollisionEnter2D(Collision2D collision)
+
+    private void RemoveCurrentBlock()
     {
-        isHit = true;
-        gravityMultiplier = slowGravityMultiplier;
+        gameplay.controlledBlock = null;
     }
 }

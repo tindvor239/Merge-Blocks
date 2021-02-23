@@ -20,5 +20,5 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         Instance = GetComponent<T>();
         //Debug.Log($"set instance of \'{instance.gameObject.name}\'");
     }
-    #endregion
+#endregion
 }
