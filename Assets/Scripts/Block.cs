@@ -12,7 +12,6 @@ public class Block : MonoBehaviour
 
     private static float slowGravityMultiplier = 0.01f, normalGravityMultiplier = 1f;
     private static float gravityMultiplier = slowGravityMultiplier;
-    private new Rigidbody2D rigidbody;
 
     private Gameplay gameplay;
     #region Properties
@@ -43,28 +42,20 @@ public class Block : MonoBehaviour
     #endregion
     private void Awake()
     {
-        rigidbody = GetComponent<Rigidbody2D>();
     }
     private void Start()
     {
         gameplay = Gameplay.Instance;
     }
+    private void Update()
+    {
+        
+    }
     private void FixedUpdate()
     {
         if(isHit != true)
         {
-            rigidbody.position -= gravityMultiplier * Gravity * (Vector2)transform.up * Time.deltaTime;
-        }
-    }
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        //isHit = true;
-        if(collision.tag != "Block")
-        {
-            Debug.Log(collision.gameObject.name);
-            isHit = true;
-            gameplay.onHitEvent += OnHit;
-            gravityMultiplier = slowGravityMultiplier;
+            transform.position -= gravityMultiplier * Gravity * transform.up * Time.deltaTime;
         }
     }
     //private void OnTriggerEnter2D(Collider2D collision)
@@ -87,7 +78,85 @@ public class Block : MonoBehaviour
     {
         gravityMultiplier = normalGravityMultiplier;
     }
+    public byte UpdateBlockPosition(byte column)
+    {
+        byte result = 0;
+        if(isHit == false)
+        {
+            for (int row = Gameplay.Instance.Blocks.Rows.Count - 1; row >= 0; row--)
+            {
+                float rowPosition = StandaloneGrid.Instance.GetRowPosition(row);
+                if(Gameplay.Instance.Blocks.Rows[row].Columns[column] == null)
+                {
+                    // return top row where block position is greater than the top of the grid.
+                    if (row >= StandaloneGrid.Instance.Row - 1 && transform.position.y >= rowPosition)
+                    {
+                        result = (byte)row;
+                        return result;
+                    }
+                    // return row where block position is in middle of the grid.
+                    else if (row - 1 >= 0 && transform.position.y <= rowPosition && transform.position.y >= StandaloneGrid.Instance.GetRowPosition(row - 1))
+                    {
+                        result = (byte)row;
+                        return result;
+                    }
+                    // return row where block is at bottom of the grid.
+                    if (row <= 0)
+                    {
+                        transform.position = new Vector2(transform.position.x, rowPosition);
 
+                        isHit = true;
+                        gameplay.onHitEvent += OnHit;
+                        gravityMultiplier = slowGravityMultiplier;
+                        return result;
+                    }
+                }
+                else
+                {
+                    //get index of block that isn't not itself.
+                    if(Gameplay.Instance.Blocks.Rows[row].Columns[column] != gameObject)
+                    {
+                        byte currentRow = (byte)row;
+                        //get the index above current index.
+                        //currentRow = row + 1;
+                        if(currentRow + 1 < Gameplay.Instance.Blocks.Rows.Count)
+                        {
+                            currentRow += 1;
+                            rowPosition = StandaloneGrid.Instance.GetRowPosition(currentRow);
+                        }
+                        //set position block follow the current row.
+                        if(transform.position.y <= rowPosition)
+                        {
+                            transform.position = new Vector2(transform.position.x, rowPosition);
+                            isHit = true;
+                            gameplay.onHitEvent += OnHit;
+                            gravityMultiplier = slowGravityMultiplier;
+                            result = currentRow;
+                            return result;
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    public int[] GetCurrentIndex()
+    {
+        int[] result = new int[2];
+        for (int row = Gameplay.Instance.Blocks.Rows.Count - 1; row >= 0; row--)
+        {
+            for (int column = 0; column < Gameplay.Instance.Blocks.Rows[row].Columns.Count; column++)
+            {
+                if (Gameplay.Instance.Blocks.Rows[row].Columns[column] == gameObject)
+                {
+                    result[0] = row;
+                    result[1] = column;
+                    return result;
+                }
+            }
+        }
+        return result;
+    }
     private void OnHit()
     {
         gameplay.controlledBlock = null;

@@ -5,15 +5,29 @@ using UnityEngine;
 public class Snaper : Singleton<Snaper>
 {
     [SerializeField]
-    private List<GameObject> snapPositions = new List<GameObject>();
-    
+    private List<Transform> defaultSnapTransforms = new List<Transform>();
+    //will be unserialize.
+    private List<Transform> snapableTransforms = new List<Transform>();
+    //will be unserialize.
+    private List<Transform> trimedSnapableTransform = new List<Transform>();
     private Vector2 nearestPosition = new Vector2();
     private static Vector2 startPosition = new Vector2(0, 1.1f);
     private float nearestDistance = 0;
     #region Properties
     public Vector2 NearestPosition
     {
-        get => nearestPosition;
+        get
+        {
+            for(byte index = 0; index < trimedSnapableTransform.Count; index++)
+            {
+                if(nearestPosition == (Vector2)trimedSnapableTransform[index].position)
+                {
+                    return nearestPosition;
+                }
+            }
+            nearestPosition = trimedSnapableTransform[trimedSnapableTransform.Count - 1].position;
+            return nearestPosition;
+        }
     }
     public static Vector2 StartPosition
     {
@@ -21,7 +35,7 @@ public class Snaper : Singleton<Snaper>
     }
     #endregion
 
-    public delegate void OnSnaping(int index);
+    public delegate void OnSnaping(byte column);
     public event OnSnaping onSnaping;
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
@@ -30,42 +44,83 @@ public class Snaper : Singleton<Snaper>
         base.Awake();
         #endregion
     }
+    private void Update()
+    {
+        snapableTransforms = GetSnapablePositions();
+        trimedSnapableTransform = TrimSnapableTransforms();
+    }
     public Vector2 Snaping()
     {
-        if (snapPositions.Count != 0)
+        if (defaultSnapTransforms.Count != 0)
         {
-            int index = 0;
-            for(int i = 0; i < snapPositions.Count; i++)
+            byte result = 0;
+            for(byte column = 0; column < trimedSnapableTransform.Count; column++)
             {
-                if(snapPositions[i] != null)
+                if (trimedSnapableTransform[column] != null)
                 {
-                    if(i == 0)
+                    if(column == 0)
                     {
-                        nearestDistance = Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, snapPositions[i].transform.position.y)), snapPositions[i].transform.position);
-                        nearestPosition = new Vector2(snapPositions[i].transform.position.x, nearestPosition.y);
+                        nearestDistance = Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, trimedSnapableTransform[column].transform.position.y)), trimedSnapableTransform[column].transform.position);
+                        nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
 
                         //Get index on snaping.
-                        index = i;
+                        result = column;
                     }
                     else
                     {
-                        if (nearestDistance > Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, snapPositions[i].transform.position.y)), snapPositions[i].transform.position))
+                        if (nearestDistance > Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, trimedSnapableTransform[column].transform.position.y)), trimedSnapableTransform[column].transform.position))
                         {
-                            nearestDistance = Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, snapPositions[i].transform.position.y)), snapPositions[i].transform.position);
-                            nearestPosition = new Vector2(snapPositions[i].transform.position.x, nearestPosition.y);
+                            nearestDistance = Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, trimedSnapableTransform[column].transform.position.y)), trimedSnapableTransform[column].transform.position);
+                            nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
 
                             //Get index on snaping.
-                            index = i;
+                            result = column;
                         }
                     }
                 }
             }
             if(onSnaping != null)
             {
-                onSnaping.Invoke(index);
+                onSnaping.Invoke(result);
                 onSnaping = null;
             }
         }
         return nearestPosition;
+    }
+    private List<Transform> TrimSnapableTransforms()
+    {
+        List<Transform> result = new List<Transform>();
+        for(byte column = 0; column < snapableTransforms.Count; column++)
+        {
+            for (byte defaultColumn = 0; defaultColumn < defaultSnapTransforms.Count; defaultColumn++)
+            {
+                if (snapableTransforms[column].gameObject == defaultSnapTransforms[defaultColumn].gameObject)
+                {
+                    result.Add(snapableTransforms[column]);
+
+                    if (column + 1 < snapableTransforms.Count
+                        && defaultColumn + 1 < defaultSnapTransforms.Count
+                        && snapableTransforms[column + 1].gameObject != defaultSnapTransforms[defaultColumn + 1].gameObject)
+                    {
+                        return result;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    private List<Transform> GetSnapablePositions()
+    {
+        List<Transform> snapablePositions = new List<Transform>();
+        for (byte column = 0; column < defaultSnapTransforms.Count; column++)
+        {
+            byte row = (byte)(StandaloneGrid.Instance.Row - 1);
+            if (Gameplay.Instance.Blocks.Rows[row].Columns[column] == null || Gameplay.Instance.Blocks.Rows[row].Columns[column] != null
+                && Gameplay.Instance.Blocks.Rows[row].Columns[column] == Gameplay.Instance.controlledBlock.gameObject)
+            {
+                snapablePositions.Add(defaultSnapTransforms[column]);
+            }
+        }
+        return snapablePositions;
     }
 }

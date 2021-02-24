@@ -15,6 +15,7 @@ public class Gameplay : Singleton<Gameplay>
     public delegate void OnHitDelegate();
     public event OnHitDelegate onHitEvent;
 
+    private byte currentColumn = 0;
     #region Properties
     public Block controlledBlock { get; set; }
     public Serializable2DArray Blocks { get => blocks; }
@@ -52,6 +53,13 @@ public class Gameplay : Singleton<Gameplay>
             ChangeControlledBlock();
             onHitEvent = null;
         }
+
+        if(controlledBlock != null)
+        {
+            MoveControlledBlock();
+            byte row = controlledBlock.UpdateBlockPosition(currentColumn);
+            blocks.Rows[row].Columns[currentColumn] = controlledBlock.gameObject;
+        }
     }
 
     private void LateUpdate()
@@ -70,42 +78,50 @@ public class Gameplay : Singleton<Gameplay>
         }
     }
 
-    private void OnSnaping(int index)
+    private void OnSnaping(byte index)
     {
-        for(int row = 0; row < blocks.Rows.Count; row++)
+        currentColumn = index;
+    }
+    private void MoveControlledBlock()
+    {
+        for (int row = blocks.Rows.Count - 1; row >= 0; row--)
         {
-            for(int column = 0; column < blocks.Rows[row].Columns.Count; column++)
+            for (int column = 0; column < blocks.Rows[row].Columns.Count; column++)
             {
                 if (blocks.Rows[row].Columns[column] == controlledBlock.gameObject)
                 {
-                    Debug.Log($"get it self \nrow: {row}, column: {column}");
                     blocks.Rows[row].Columns[column] = null;
                 }
             }
         }
-        blocks.Rows[0].Columns[index] = controlledBlock.gameObject;
-        Debug.Log($"index: {index}");
     }
     private void ChangeControlledBlock()
     {
         //To do: spawn another block to control.
-        controlledBlock = CreateControlledBlock();
+        Debug.Log("Change Controlling Block");
+        controlledBlock = GetControlledBlock();
         if(controlledBlock != null)
         {
             controlledBlock.transform.position = Snaper.StartPosition;
         }
     }
-    private Block CreateControlledBlock()
+    
+    private Block GetControlledBlock()
     {
         ObjectPool objectPool = poolParty.GetPool("Blocks Pool");
+        Block block = null;
         if (objectPool != null && objectPool.ObjectToPool != null)
         {
-            Block block = objectPool.CreatePooledObject().GetComponent<Block>();
-            if (block != null)
+            if(objectPool.GetPooledObject() != null)
             {
-                return block;
+                block = objectPool.GetPooledObject().GetComponent<Block>();
             }
+            if(block == null)
+            {
+                block = objectPool.CreatePooledObject().GetComponent<Block>();
+            }
+            
         }
-        return null;
+        return block;
     }
 }

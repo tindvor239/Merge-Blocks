@@ -2538,12 +2538,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 777cea7206fc8104d8f9815480a3ce49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  snapPositions:
-  - {fileID: 9131279367774116663}
-  - {fileID: 9131279368312523737}
-  - {fileID: 9131279367471093783}
-  - {fileID: 9131279367522759717}
-  - {fileID: 9131279368890297686}
+  defaultSnapTransforms:
+  - {fileID: 9131279367774116661}
+  - {fileID: 9131279368312523739}
+  - {fileID: 9131279367471093781}
+  - {fileID: 9131279367522759719}
+  - {fileID: 9131279368890297684}
+  snapableTransforms: []
 --- !u!1 &1066161243
 GameObject:
   m_ObjectHideFlags: 0

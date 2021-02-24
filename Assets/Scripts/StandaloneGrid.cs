@@ -12,7 +12,7 @@ public class StandaloneGrid : Singleton<StandaloneGrid>
 
     private static Vector2 defaultPosition = new Vector2(0, 0.1f);
     private static float defaultSpace = 0.19f;
-    private static float size = 1.3f;
+    private static float defaultSize = 1.3f;
     private byte lastRow = 0, lastColumn = 0;
     [SerializeField]
     private Serializable2DArray tiles;
@@ -23,6 +23,9 @@ public class StandaloneGrid : Singleton<StandaloneGrid>
     public byte Row { get => row; }
     public byte Column { get => column; }
     public Serializable2DArray Tiles { get => tiles; }
+    public static Vector2 DefaultPosition { get => defaultPosition; set => defaultPosition = value; }
+    public static float DefaultSpace { get => defaultSpace; set => defaultSpace = value; }
+    public static float DefaultSize { get => defaultSize; set => defaultSize = value; } 
     #endregion
 
     // Awake is called when the script instance is being loaded.
@@ -57,6 +60,12 @@ public class StandaloneGrid : Singleton<StandaloneGrid>
     private void OnInspectorFieldsChanged()
     {
         //SpawnGrid();
+    }
+    public float GetRowPosition(int row)
+    {
+        //result.x = ((column - (this.column / 2)) * defaultSpace) + defaultPosition.x;
+        float result = ((row - (this.row / 2)) * defaultSpace) + defaultPosition.y;
+        return result;
     }
     //private void SpawnGrid()
     //{
@@ -105,12 +114,5 @@ public class StandaloneGrid : Singleton<StandaloneGrid>
     //        }
     //        tiles.Clear();
     //    }
-    //}
-    //private Vector2 GetTilePosition(int row, int column)
-    //{
-    //    Vector2 result = new Vector2();
-    //    result.x = ((column - (this.column / 2)) * defaultSpace) + defaultPosition.x;
-    //    result.y = ((row - (this.row / 2)) * defaultSpace) + defaultPosition.y;
-    //    return result;
     //}
 }
