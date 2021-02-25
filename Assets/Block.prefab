@@ -215,5 +215,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fc88c3808cff104ead839b3a3535882, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textMesh: {fileID: 0}
+  point: {fileID: 4377139869931273963}
   isHit: 0

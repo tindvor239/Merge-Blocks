@@ -40,7 +40,7 @@ public class RowOfObjects
     private List<GameObject> columns;
     #region Properties
     public string name { get; set; }
-    public List<GameObject> Columns { get => columns; }
+    public List<GameObject> Columns { get => columns; set => columns = value; }
     #endregion
     #region Constructor
     public RowOfObjects()

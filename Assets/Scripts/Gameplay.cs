@@ -4,21 +4,20 @@ using UnityEngine;
 
 public class Gameplay : Singleton<Gameplay>
 {
-    [Header("Blocks")]
-    [SerializeField]
-    private Serializable2DArray blocks = null;
-
+    //Instances.
     private Snaper snaper;
-    private StandaloneGrid grid;
+    private Grid grid;
     private PoolParty poolParty;
+    private GameManager gameManager;
 
     public delegate void OnHitDelegate();
     public event OnHitDelegate onHitEvent;
 
-    private byte currentColumn = 0;
+    [SerializeField]
+    private Block controlledBlock;
+    private int currentColumn = 0;
     #region Properties
-    public Block controlledBlock { get; set; }
-    public Serializable2DArray Blocks { get => blocks; }
+    public Block ControlledBlock { get => controlledBlock; }
     #endregion
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
@@ -31,8 +30,9 @@ public class Gameplay : Singleton<Gameplay>
     private void Start()
     {
         snaper = Snaper.Instance;
-        grid = StandaloneGrid.Instance;
+        grid = Grid.Instance;
         poolParty = PoolParty.Instance;
+        gameManager = GameManager.Instance;
 
         ChangeControlledBlock();
     }
@@ -40,57 +40,86 @@ public class Gameplay : Singleton<Gameplay>
     // Update is called once per frame
     private void Update()
     {
-        if (Input.GetMouseButton(0))
-        {
-            snaper.Snaping();
-            snaper.onSnaping += OnSnaping;
-        }
-
-        //This event will called once when event is called.
-        if(onHitEvent != null)
-        {
-            onHitEvent.Invoke();
-            ChangeControlledBlock();
-            onHitEvent = null;
-        }
-
-        if(controlledBlock != null)
-        {
-            MoveControlledBlock();
-            byte row = controlledBlock.UpdateBlockPosition(currentColumn);
-            blocks.Rows[row].Columns[currentColumn] = controlledBlock.gameObject;
-        }
+        gameManager.onUpdate += OnUpdate;
     }
 
     private void LateUpdate()
     {
-        if(controlledBlock != null && controlledBlock.IsHit == false)
+        gameManager.onUpdate += OnLateUpdate;
+    }
+    private void OnUpdate(GameManager.GameState state)
+    {
+        switch(state)
         {
-            controlledBlock.transform.position = new Vector2(snaper.NearestPosition.x, controlledBlock.transform.position.y);
-        }
-        if(Input.GetMouseButtonUp(0))
-        {
-            //To do Block will be drop.
-            if(controlledBlock != null)
-            {
-                controlledBlock.Push();
-            }
+            #region Play
+            case GameManager.GameState.play:
+
+                //Player controll.
+                if (Input.GetMouseButton(0))
+                {
+                    snaper.Snaping();
+                    snaper.onSnaping += OnSnaping;
+                }
+
+                //This event will called once when controlling block's hit.
+                if (onHitEvent != null)
+                {
+                    onHitEvent.Invoke();
+                    ChangeControlledBlock();
+                    onHitEvent = null;
+                }
+
+                if (ControlledBlock != null)
+                {
+                    RemoveDuplicateBlocks();
+                    if (currentColumn != -1)
+                    {
+                        int row = ControlledBlock.UpdateBlockPosition(currentColumn);
+                        if (row != -1)
+                        {
+                            grid.Blocks.Rows[row].Columns[currentColumn] = ControlledBlock.gameObject;
+                        }
+                    }
+                }
+            break;
+            #endregion
         }
     }
-
-    private void OnSnaping(byte index)
+    private void OnLateUpdate(GameManager.GameState state)
+    {
+        switch (state)
+        {
+            #region Play
+            case GameManager.GameState.play:
+                if (ControlledBlock != null && ControlledBlock.IsHit == false)
+                {
+                    ControlledBlock.transform.position = new Vector2(snaper.NearestPosition.x, ControlledBlock.transform.position.y);
+                }
+                if (Input.GetMouseButtonUp(0))
+                {
+                    //To do Block will be drop.
+                    if (ControlledBlock != null)
+                    {
+                        ControlledBlock.Push();
+                    }
+                }
+            break;
+            #endregion
+        }
+    }
+    private void OnSnaping(int index)
     {
         currentColumn = index;
     }
-    private void MoveControlledBlock()
+    private void RemoveDuplicateBlocks()
     {
-        for (int row = blocks.Rows.Count - 1; row >= 0; row--)
+        for (int row = Grid.Instance.Blocks.Rows.Count - 1; row >= 0; row--)
         {
-            for (int column = 0; column < blocks.Rows[row].Columns.Count; column++)
+            for (int column = 0; column < Grid.Instance.Blocks.Rows[row].Columns.Count; column++)
             {
-                if (blocks.Rows[row].Columns[column] == controlledBlock.gameObject)
+                if (Grid.Instance.Blocks.Rows[row].Columns[column] != null && Grid.Instance.Blocks.Rows[row].Columns[column] == ControlledBlock.gameObject)
                 {
-                    blocks.Rows[row].Columns[column] = null;
+                    Grid.Instance.Blocks.Rows[row].Columns[column] = null;
                 }
             }
         }
@@ -98,27 +127,27 @@ public class Gameplay : Singleton<Gameplay>
     private void ChangeControlledBlock()
     {
         //To do: spawn another block to control.
-        Debug.Log("Change Controlling Block");
-        controlledBlock = GetControlledBlock();
-        if(controlledBlock != null)
+        controlledBlock = null;
+        controlledBlock = GetControlledBlock().GetComponent<Block>();
+        if(ControlledBlock != null)
         {
-            controlledBlock.transform.position = Snaper.StartPosition;
+            ControlledBlock.transform.position = Snaper.StartPosition;
         }
     }
-    
-    private Block GetControlledBlock()
+    //MUST BE RETURN TO GAMEOBJECT
+    private GameObject GetControlledBlock()
     {
         ObjectPool objectPool = poolParty.GetPool("Blocks Pool");
-        Block block = null;
+        GameObject block = null;
         if (objectPool != null && objectPool.ObjectToPool != null)
         {
             if(objectPool.GetPooledObject() != null)
             {
-                block = objectPool.GetPooledObject().GetComponent<Block>();
+                block = objectPool.GetPooledObject();
             }
             if(block == null)
             {
-                block = objectPool.CreatePooledObject().GetComponent<Block>();
+                block = objectPool.CreatePooledObject();
             }
             
         }

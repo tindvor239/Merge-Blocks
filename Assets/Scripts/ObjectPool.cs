@@ -52,9 +52,32 @@ public class ObjectPool
         {
             if(pooledObject != null && !pooledObject.activeInHierarchy)
             {
+                pooledObject.SetActive(true);
                 return pooledObject;
             }
         }
         return null;
+    }
+    public void GetBackToPool(GameObject gameObject)
+    {
+        if(CheckObjectIsInPool(gameObject) && gameObject.activeInHierarchy)
+        {
+            gameObject.SetActive(false);
+        }
+        else
+        {
+            Debug.Log($"object didn't belong to this: {name}");
+        }
+    }
+    private bool CheckObjectIsInPool(GameObject gameObject)
+    {
+        foreach(GameObject pooledObject in pooledObjects)
+        {
+            if(pooledObject == gameObject)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
