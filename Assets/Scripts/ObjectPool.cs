@@ -66,7 +66,7 @@ public class ObjectPool
         }
         else
         {
-            Debug.Log($"object didn't belong to this: {name}");
+            Debug.Log($"object didn't belong to pool: {name}");
         }
     }
     private bool CheckObjectIsInPool(GameObject gameObject)

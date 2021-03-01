@@ -10,6 +10,8 @@ public class Snaper : Singleton<Snaper>
     private List<Transform> snapableTransforms = new List<Transform>();
     //will be unserialize.
     private List<Transform> trimedSnapableTransform = new List<Transform>();
+    //will be unserialize.
+    private int currentIndex;
     private Vector2 nearestPosition = new Vector2();
     private static Vector2 startPosition = new Vector2(0, 1.1f);
     private float nearestDistance = 0;
@@ -35,8 +37,8 @@ public class Snaper : Singleton<Snaper>
     }
     #endregion
 
-    public delegate void OnSnaping(int column);
-    public event OnSnaping onSnaping;
+    public delegate void OnSwitchingPosition(int column);
+    public event OnSwitchingPosition onSwitchingColumn;
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
     {
@@ -44,16 +46,24 @@ public class Snaper : Singleton<Snaper>
         base.Awake();
         #endregion
     }
+    private void Start()
+    {
+        currentIndex = defaultSnapTransforms.Count / 2;
+    }
     private void Update()
     {
         snapableTransforms = GetSnapablePositions();
         trimedSnapableTransform = TrimSnapableTransforms();
+        if (onSwitchingColumn != null)
+        {
+            onSwitchingColumn.Invoke(currentIndex);
+            onSwitchingColumn = null;
+        }
     }
-    public Vector2 Snaping()
+    public void SwitchBlockPosition()
     {
         if (defaultSnapTransforms.Count != 0)
         {
-            int result = 0;
             for(byte column = 0; column < trimedSnapableTransform.Count; column++)
             {
                 if (trimedSnapableTransform[column] != null)
@@ -66,7 +76,7 @@ public class Snaper : Singleton<Snaper>
                         nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
 
                         //Get index on snaping.
-                        result = ConvertSnapTransformColumnToGridColumn(column);
+                        currentIndex = ConvertSnapTransformColumnToGridColumn(column);
                     }
                     else
                     {
@@ -77,18 +87,13 @@ public class Snaper : Singleton<Snaper>
                             nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
 
                             //Get index on snaping.
-                            result = ConvertSnapTransformColumnToGridColumn(column);
+                            currentIndex = ConvertSnapTransformColumnToGridColumn(column);
                         }
                     }
                 }
             }
-            if(onSnaping != null)
-            {
-                onSnaping.Invoke(result);
-                onSnaping = null;
-            }
+
         }
-        return nearestPosition;
     }
 
     private int ConvertSnapTransformColumnToGridColumn(int column)
@@ -132,7 +137,7 @@ public class Snaper : Singleton<Snaper>
         {
             byte row = (byte)(Grid.Instance.Row - 1);
             if (Grid.Instance.Blocks.Rows[row].Columns[column] == null || Grid.Instance.Blocks.Rows[row].Columns[column] != null
-                && Grid.Instance.Blocks.Rows[row].Columns[column] == Gameplay.Instance.ControlledBlock.gameObject)
+                && Gameplay.Instance.ControlledBlock != null && Grid.Instance.Blocks.Rows[row].Columns[column] == Gameplay.Instance.ControlledBlock.gameObject)
             {
                 snapablePositions.Add(defaultSnapTransforms[column]);
             }

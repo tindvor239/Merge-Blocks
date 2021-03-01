@@ -9,13 +9,16 @@ public class Gameplay : Singleton<Gameplay>
     private Grid grid;
     private PoolParty poolParty;
     private GameManager gameManager;
+    private bool controlable = false;
 
-    public delegate void OnHitDelegate();
-    public event OnHitDelegate onHitEvent;
+    public delegate bool OnHit();
+    public event OnHit onHitEvent;
+
+    public delegate bool OnChangeBlock();
+    public event OnChangeBlock onChangeBlock;
 
     [SerializeField]
     private Block controlledBlock;
-    private int currentColumn = 0;
     #region Properties
     public Block ControlledBlock { get => controlledBlock; }
     #endregion
@@ -55,33 +58,31 @@ public class Gameplay : Singleton<Gameplay>
             case GameManager.GameState.play:
 
                 //Player controll.
-                if (Input.GetMouseButton(0))
+                if(controlable)
                 {
-                    snaper.Snaping();
-                    snaper.onSnaping += OnSnaping;
+                    if (Input.GetMouseButton(0))
+                    {
+                        snaper.SwitchBlockPosition();
+                    }
                 }
 
                 //This event will called once when controlling block's hit.
                 if (onHitEvent != null)
                 {
-                    onHitEvent.Invoke();
-                    ChangeControlledBlock();
+                    controlable = onHitEvent.Invoke();
+                    //Debug.Log(controlable);
                     onHitEvent = null;
                 }
-
-                if (ControlledBlock != null)
+                if (onChangeBlock != null)
                 {
-                    RemoveDuplicateBlocks();
-                    if (currentColumn != -1)
+                    controlledBlock = null;
+                    if (onChangeBlock.Invoke())
                     {
-                        int row = ControlledBlock.UpdateBlockPosition(currentColumn);
-                        if (row != -1)
-                        {
-                            grid.Blocks.Rows[row].Columns[currentColumn] = ControlledBlock.gameObject;
-                        }
+                        ChangeControlledBlock();
                     }
+                    onChangeBlock = null;
                 }
-            break;
+                break;
             #endregion
         }
     }
@@ -95,62 +96,116 @@ public class Gameplay : Singleton<Gameplay>
                 {
                     ControlledBlock.transform.position = new Vector2(snaper.NearestPosition.x, ControlledBlock.transform.position.y);
                 }
-                if (Input.GetMouseButtonUp(0))
+                if(controlable)
                 {
-                    //To do Block will be drop.
-                    if (ControlledBlock != null)
+                    if (Input.GetMouseButtonUp(0))
                     {
-                        ControlledBlock.Push();
+                        //To do Block will be drop.
+                        if (ControlledBlock != null)
+                        {
+                            ControlledBlock.Push();
+                        }
                     }
                 }
             break;
             #endregion
         }
     }
-    private void OnSnaping(int index)
-    {
-        currentColumn = index;
-    }
-    private void RemoveDuplicateBlocks()
-    {
-        for (int row = Grid.Instance.Blocks.Rows.Count - 1; row >= 0; row--)
-        {
-            for (int column = 0; column < Grid.Instance.Blocks.Rows[row].Columns.Count; column++)
-            {
-                if (Grid.Instance.Blocks.Rows[row].Columns[column] != null && Grid.Instance.Blocks.Rows[row].Columns[column] == ControlledBlock.gameObject)
-                {
-                    Grid.Instance.Blocks.Rows[row].Columns[column] = null;
-                }
-            }
-        }
-    }
     private void ChangeControlledBlock()
     {
         //To do: spawn another block to control.
-        controlledBlock = null;
         controlledBlock = GetControlledBlock().GetComponent<Block>();
-        if(ControlledBlock != null)
-        {
-            ControlledBlock.transform.position = Snaper.StartPosition;
-        }
+        controlledBlock.gravityMultiplier = Block.slowGravityMultiplier;
+        controlledBlock.transform.position = Snaper.StartPosition;
+        controlable = true;
+        //Debug.Log("In");
     }
     //MUST BE RETURN TO GAMEOBJECT
     private GameObject GetControlledBlock()
     {
         ObjectPool objectPool = poolParty.GetPool("Blocks Pool");
-        GameObject block = null;
+        GameObject pooledObject = null;
         if (objectPool != null && objectPool.ObjectToPool != null)
         {
-            if(objectPool.GetPooledObject() != null)
+            pooledObject = objectPool.GetPooledObject();
+            if (pooledObject != null)
             {
-                block = objectPool.GetPooledObject();
+                Block block = pooledObject.GetComponent<Block>();
+                if(block != null)
+                {
+                    block.IsHit = false;
+                }
             }
-            if(block == null)
+            if(pooledObject == null)
             {
-                block = objectPool.CreatePooledObject();
+                pooledObject = objectPool.CreatePooledObject();
             }
             
         }
-        return block;
+        return pooledObject;
+    }
+    private bool IsEndTurn()
+    {
+        //If any nearby same point blocks.
+        for(int row = 0; row < Grid.Instance.Blocks.Rows.Count; row++)
+        {
+            for(int column = 0; column < Grid.Instance.Blocks.Rows[row].Columns.Count; column++)
+            {
+                if(Grid.Instance.Blocks.Rows[row].Columns[column] != null)
+                {
+                    GameObject currentBlock = Grid.Instance.Blocks.Rows[row].Columns[column];
+                    if (column + 1 < Grid.Instance.Blocks.Rows[row].Columns.Count)
+                    {
+                        int nearbyColumn = column + 1;
+                        if(Grid.Instance.Blocks.Rows[row].Columns[nearbyColumn] != null)
+                        {
+                            GameObject nearbyObject = Grid.Instance.Blocks.Rows[row].Columns[nearbyColumn];
+                            if (nearbyObject.GetComponent<Block>() && currentBlock.GetComponent<Block>())
+                            {
+                                Block nearbyBlock = nearbyObject.GetComponent<Block>();
+                                Block block = currentBlock.GetComponent<Block>();
+                                if(nearbyBlock.Point == block.Point)
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //If any below same point blocks.
+        for(int column = 0; column < Grid.Instance.Blocks.Rows[0].Columns.Count; column++)
+        {
+            for(int row = 0; row < Grid.Instance.Blocks.Rows.Count; row++)
+            {
+                if(Grid.Instance.Blocks.Rows[row].Columns[column] != null)
+                {
+                    GameObject currentObject = Grid.Instance.Blocks.Rows[row].Columns[column];
+                    int belowRow = row + 1;
+                    if(belowRow < Grid.Instance.Blocks.Rows.Count)
+                    {
+                        if(Grid.Instance.Blocks.Rows[belowRow].Columns[column] != null)
+                        {
+                            GameObject belowObject = Grid.Instance.Blocks.Rows[belowRow].Columns[column];
+                            if(belowObject.GetComponent<Block>() && currentObject.GetComponent<Block>())
+                            {
+                                Block belowBlock = belowObject.GetComponent<Block>();
+                                Block currentBlock = currentObject.GetComponent<Block>();
+                                if(belowBlock.Point == currentBlock.Point)
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    private void OnControlledBlockMovingDown(int row)
+    {
+
     }
 }
