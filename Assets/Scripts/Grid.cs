@@ -97,4 +97,17 @@ public class Grid : Singleton<Grid>
         }
         return true;
     }
+    public int GetEmptyRowIndex(int column)
+    {
+        int result = -1;
+        for(byte row = 0; row < blocks.Rows.Count; row++)
+        {
+            if(blocks.Rows[row].Columns[column] == null)
+            {
+                result = row;
+                return result;
+            }
+        }
+        return result;
+    }
 }

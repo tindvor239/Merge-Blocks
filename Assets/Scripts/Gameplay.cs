@@ -92,10 +92,6 @@ public class Gameplay : Singleton<Gameplay>
         {
             #region Play
             case GameManager.GameState.play:
-                if (ControlledBlock != null && ControlledBlock.IsHit == false)
-                {
-                    ControlledBlock.transform.position = new Vector2(snaper.NearestPosition.x, ControlledBlock.transform.position.y);
-                }
                 if(controlable)
                 {
                     if (Input.GetMouseButtonUp(0))

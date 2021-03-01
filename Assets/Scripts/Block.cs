@@ -15,9 +15,13 @@ public class Block : MonoBehaviour
     public float gravityMultiplier = slowGravityMultiplier;
 
     [SerializeField]
-    private int currentColumn;
-    [SerializeField]
     private int currentRow;
+    [SerializeField]
+    private int currentColumn;
+
+
+    private int destinateRow, destinateColumn;
+    private float destinateYPosition;
 
     private Gameplay gameplay;
 
@@ -64,19 +68,14 @@ public class Block : MonoBehaviour
     private void Start()
     {
         gameplay = Gameplay.Instance;
-        currentRow = Grid.Instance.Blocks.Rows.Count - 1;
+    }
+    private void OnEnable()
+    {
+        Snaper.Instance.onSwitchingColumn += OnSwitchingColumn;
     }
     private void Update()
     {
-        Snaper.Instance.onSwitchingColumn += OnSwitchingColumn;
-
-        int row = UpdateBlockPosition(currentColumn);
-        if (currentColumn != -1 && row != -1)
-        {
-            currentRow = row;
-            RemoveDuplicateBlock();
-            Grid.Instance.Blocks.Rows[currentRow].Columns[currentColumn] = gameObject;
-        }
+        UpdatePosition(destinateRow, destinateColumn);
     }
     private void FixedUpdate()
     {
@@ -85,39 +84,59 @@ public class Block : MonoBehaviour
             transform.position -= gravityMultiplier * Gravity * transform.up * Time.deltaTime;
         }
     }
-    private void RemoveDuplicateBlock()
+    private void OnSwitchingColumn(int row, int column)
     {
-        for (int row = Grid.Instance.Blocks.Rows.Count - 1; row >= 0; row--)
+        if(gameplay != null && gameplay.ControlledBlock != null && gameplay.ControlledBlock == this)
         {
-            for (int column = 0; column < Grid.Instance.Blocks.Rows[row].Columns.Count; column++)
+            destinateColumn = column;
+        }
+        destinateRow = row;
+    }
+    private void UpdatePosition(int row, int column)
+    {
+        destinateYPosition = Grid.Instance.GetRowPosition(currentRow);
+        if(transform.position.y <= destinateYPosition)
+        {
+            transform.position = new Vector2(transform.position.x, destinateYPosition);
+            OnHit(destinateRow, destinateColumn);
+        }
+    }
+    private void OnHit(int row, int column)
+    {
+        currentRow = row;
+        currentColumn = column;
+        Grid.Instance.Blocks.Rows[row].Columns[column] = gameObject;
+
+        int mergeAmount = GetAroundBlocksFromIndex(row, column);
+        bool canMerge = mergeAmount != 0 ? true : false;
+        if(canMerge)
+        {
+            Merge(mergeAmount);
+        }
+
+        bool isBellowEmpty = IsBellowEmpty(row, column);
+        if (isBellowEmpty)
+        {
+            //To do: if there isn't any block OR at the end of the grid.
+        }
+        else
+        {
+            isHit = true;
+            if(gameplay.ControlledBlock == this)
             {
-                if (Grid.Instance.Blocks.Rows[row].Columns[column] != null && Grid.Instance.Blocks.Rows[row].Columns[column] == this.gameObject)
-                {
-                    Grid.Instance.Blocks.Rows[row].Columns[column] = null;
-                }
+                gameplay.onChangeBlock += ChangeBlock;
             }
         }
+
     }
-    private void OnSwitchingColumn(int column)
+
+    private void Merge(int amount)
     {
-        if(gameplay.ControlledBlock == this)
-        {
-            currentColumn = column;
-        }
-    }
-    private void Merge()
-    {
-        int[] initPosition = GetInit();
-        int row = initPosition[0], column = initPosition[1];
         // Get around blocks => int.
         // In Get around block => delete blocks.
-        if (row != -1 && column != -1)
+        for(byte index = 0; index < amount; index++)
         {
-            int amount = GetAroundBlocksFromIndex(row, column);
-            for(byte index = 0; index < amount; index++)
-            {
-                Point += Point;
-            }
+            Point += Point;
         }
     }
     private int GetAroundBlocksFromIndex(int row, int column)
@@ -195,29 +214,6 @@ public class Block : MonoBehaviour
         result[1] = -1;
         return result;
     }
-    private void OnHit(int row, int column)
-    {
-        //IsHit = true;
-        Merge();
-        bool isBellowEmpty = IsBellowEmpty(row, column);
-        if (gameplay.ControlledBlock == this)
-        {
-            gameplay.onHitEvent += Uncontrolable;
-        }
-        if (isBellowEmpty)
-        {
-            //To do: if there isn't any block OR at the end of the grid.
-        }
-        else
-        {
-            isHit = true;
-            if(gameplay.ControlledBlock == this)
-            {
-                gameplay.onChangeBlock += ChangeBlock;
-            }
-        }
-
-    }
     private bool ChangeBlock()
     {
         return true;
@@ -229,6 +225,10 @@ public class Block : MonoBehaviour
     public void Push()
     {
         gravityMultiplier = normalGravityMultiplier;
+        if (gameplay.ControlledBlock == this)
+        {
+            gameplay.onHitEvent += Uncontrolable;
+        }
     }
     private bool IsBellowEmpty(int row, int column)
     {
@@ -248,85 +248,6 @@ public class Block : MonoBehaviour
         }
         return true;
     }
-    private int UpdateBlockPosition(int column)
-    {
-        int result = 0;
-        if(IsHit == false && column != -1)
-        {
-            //for (int row = currentRow; row >= 0; row--)
-            //{
-            if(currentRow - 1 >= 0)
-            {
-                int row = currentRow - 1;
-                Debug.Log("In1");
-                float rowPosition = Grid.Instance.GetRowPosition(row);
-                if(Grid.Instance.Blocks.Rows[row].Columns[column] == null)
-                {
-                    // return top row where block position is greater than the top of the grid.
-                    if (row >= Grid.Instance.Row - 1 && transform.position.y >= rowPosition)
-                    {
-                        Debug.Log("In2");
-                        result = row;
-                        return result;
-                    }
-                    // return row where block position is in middle of the grid.
-                    else if (transform.position.y >= rowPosition && row + 1 < Grid.Instance.Row && transform.position.y < Grid.Instance.GetRowPosition(row + 1))
-                    {
-                        Debug.Log("In3");
-                        result = row;
-                        return result;
-                    }
-                    // return row where block is at bottom of the grid.
-                    if (row == 0)
-                        Debug.Log("Yea");
-                    if (row <= 0 && transform.position.y <= rowPosition)
-                    {
-                        Debug.Log("In4");
-                        transform.position = new Vector2(transform.position.x, rowPosition);
-                        OnHit(row, column);
-                        return result;
-                    }
-                }
-                else
-                {
-                    //get index of block that bellow it.
-                    if(row - 1 >= 0 && Grid.Instance.Blocks.Rows[row - 1].Columns[column] != null)
-                    {
-                        Debug.Log("In5");
-                        //get the index above current index.
-                        //set position block follow the current row.
-                        if (transform.position.y <= rowPosition)
-                        {
-                            Debug.Log("In6");
-                            transform.position = new Vector2(transform.position.x, rowPosition);
-                            OnHit(row, column);
-                            result = row;
-                            return result;
-                        }
-                    }
-                }
-            }
-            //}
-        }
-        //else
-        //{
-        //    for(int row = 0; row < Grid.Instance.Blocks.Rows.Count; row++)
-        //    {
-        //        if(Grid.Instance.Blocks.Rows[row].Columns[column] == gameObject)
-        //        {
-        //            Debug.Log("In");
-        //            if(row - 1 >= 0 && Grid.Instance.Blocks.Rows[row - 1].Columns[column] == null)
-        //            {
-        //                isHit = false;
-        //            }
-        //            result = row;
-        //            return result;
-        //        }
-        //    }
-        //}
-        Debug.Log($"{gameObject} column{column}");
-        return -1;
-    }
     public int[] GetCurrentIndex()
     {
         int[] result = new int[2];
@@ -343,9 +264,5 @@ public class Block : MonoBehaviour
             }
         }
         return result;
-    }
-    private bool isOnControl()
-    {
-        return false;
     }
 }

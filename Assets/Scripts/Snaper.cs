@@ -11,7 +11,7 @@ public class Snaper : Singleton<Snaper>
     //will be unserialize.
     private List<Transform> trimedSnapableTransform = new List<Transform>();
     //will be unserialize.
-    private int currentIndex;
+    private int snapColumn;
     private Vector2 nearestPosition = new Vector2();
     private static Vector2 startPosition = new Vector2(0, 1.1f);
     private float nearestDistance = 0;
@@ -37,7 +37,7 @@ public class Snaper : Singleton<Snaper>
     }
     #endregion
 
-    public delegate void OnSwitchingPosition(int column);
+    public delegate void OnSwitchingPosition(int row, int column);
     public event OnSwitchingPosition onSwitchingColumn;
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
@@ -48,7 +48,8 @@ public class Snaper : Singleton<Snaper>
     }
     private void Start()
     {
-        currentIndex = defaultSnapTransforms.Count / 2;
+        snapColumn = defaultSnapTransforms.Count / 2;
+        SwitchBlockPosition();
     }
     private void Update()
     {
@@ -56,7 +57,9 @@ public class Snaper : Singleton<Snaper>
         trimedSnapableTransform = TrimSnapableTransforms();
         if (onSwitchingColumn != null)
         {
-            onSwitchingColumn.Invoke(currentIndex);
+            int destinateRow = Grid.Instance.GetEmptyRowIndex(snapColumn);
+            onSwitchingColumn.Invoke(destinateRow, snapColumn);
+            Debug.Log($"column: {snapColumn}");
             onSwitchingColumn = null;
         }
     }
@@ -74,9 +77,12 @@ public class Snaper : Singleton<Snaper>
                         //Get 1st distance in array => then compare to other distances in array.
                         nearestDistance = Vector2.Distance(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, trimedSnapableTransform[column].transform.position.y)), trimedSnapableTransform[column].transform.position);
                         nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
-
+                        if (Gameplay.Instance.ControlledBlock != null && Gameplay.Instance.ControlledBlock.IsHit == false)
+                        {
+                            Gameplay.Instance.ControlledBlock.transform.position = new Vector2(nearestPosition.x, Gameplay.Instance.ControlledBlock.transform.position.y);
+                        }
                         //Get index on snaping.
-                        currentIndex = ConvertSnapTransformColumnToGridColumn(column);
+                        snapColumn = ConvertSnapTransformColumnToGridColumn(column);
                     }
                     else
                     {
@@ -85,9 +91,12 @@ public class Snaper : Singleton<Snaper>
                         {
                             nearestDistance = distance;
                             nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
-
+                            if (Gameplay.Instance.ControlledBlock != null && Gameplay.Instance.ControlledBlock.IsHit == false)
+                            {
+                                Gameplay.Instance.ControlledBlock.transform.position = new Vector2(nearestPosition.x, Gameplay.Instance.ControlledBlock.transform.position.y);
+                            }
                             //Get index on snaping.
-                            currentIndex = ConvertSnapTransformColumnToGridColumn(column);
+                            snapColumn = ConvertSnapTransformColumnToGridColumn(column);
                         }
                     }
                 }
