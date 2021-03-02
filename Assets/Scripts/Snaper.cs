@@ -35,10 +35,8 @@ public class Snaper : Singleton<Snaper>
     {
         get => startPosition;
     }
+    public int SnapColumn { get => snapColumn; }
     #endregion
-
-    public delegate void OnSwitchingPosition(int row, int column);
-    public event OnSwitchingPosition onSwitchingColumn;
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
     {
@@ -49,24 +47,34 @@ public class Snaper : Singleton<Snaper>
     private void Start()
     {
         snapColumn = defaultSnapTransforms.Count / 2;
-        SwitchBlockPosition();
     }
-    private void Update()
+    public void SetBlockColumnOnSpawn()
     {
         snapableTransforms = GetSnapablePositions();
         trimedSnapableTransform = TrimSnapableTransforms();
-        if (onSwitchingColumn != null)
+        for (byte column = 0; column < trimedSnapableTransform.Count; column++)
         {
-            int destinateRow = Grid.Instance.GetEmptyRowIndex(snapColumn);
-            onSwitchingColumn.Invoke(destinateRow, snapColumn);
-            Debug.Log($"column: {snapColumn}");
-            onSwitchingColumn = null;
+            if (trimedSnapableTransform[column] != null)
+            {
+                if (Gameplay.Instance.ControlledBlock != null && Gameplay.Instance.ControlledBlock.IsHit == false)
+                {
+                    Gameplay.Instance.ControlledBlock.transform.position = new Vector2(nearestPosition.x, Gameplay.Instance.ControlledBlock.transform.position.y);
+                }
+                snapColumn = ConvertSnapTransformColumnToGridColumn(column);
+                Gameplay.Instance.ControlledBlock.DestinateColumn = snapColumn;
+                Gameplay.Instance.ControlledBlock.DestinateRow = Grid.Instance.GetEmptyRowIndex(snapColumn);
+                nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
+                startPosition = new Vector2(nearestPosition.x, startPosition.y);
+                break;
+            }
         }
     }
     public void SwitchBlockPosition()
     {
         if (defaultSnapTransforms.Count != 0)
         {
+            snapableTransforms = GetSnapablePositions();
+            trimedSnapableTransform = TrimSnapableTransforms();
             for(byte column = 0; column < trimedSnapableTransform.Count; column++)
             {
                 if (trimedSnapableTransform[column] != null)
@@ -83,6 +91,9 @@ public class Snaper : Singleton<Snaper>
                         }
                         //Get index on snaping.
                         snapColumn = ConvertSnapTransformColumnToGridColumn(column);
+                        Gameplay.Instance.ControlledBlock.DestinateColumn = snapColumn;
+                        Gameplay.Instance.ControlledBlock.DestinateRow = Grid.Instance.GetEmptyRowIndex(snapColumn);
+                        startPosition = new Vector2(nearestPosition.x, startPosition.y);
                     }
                     else
                     {
@@ -97,6 +108,9 @@ public class Snaper : Singleton<Snaper>
                             }
                             //Get index on snaping.
                             snapColumn = ConvertSnapTransformColumnToGridColumn(column);
+                            Gameplay.Instance.ControlledBlock.DestinateColumn = snapColumn;
+                            Gameplay.Instance.ControlledBlock.DestinateRow = Grid.Instance.GetEmptyRowIndex(snapColumn);
+                            startPosition = new Vector2(nearestPosition.x, startPosition.y);
                         }
                     }
                 }

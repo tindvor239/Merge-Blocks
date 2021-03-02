@@ -102,6 +102,7 @@ public class Grid : Singleton<Grid>
         int result = -1;
         for(byte row = 0; row < blocks.Rows.Count; row++)
         {
+            
             if(blocks.Rows[row].Columns[column] == null)
             {
                 result = row;

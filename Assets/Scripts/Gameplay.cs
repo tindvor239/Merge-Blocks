@@ -37,7 +37,7 @@ public class Gameplay : Singleton<Gameplay>
         poolParty = PoolParty.Instance;
         gameManager = GameManager.Instance;
 
-        ChangeControlledBlock();
+        SpawnBlock();
     }
 
     // Update is called once per frame
@@ -78,7 +78,7 @@ public class Gameplay : Singleton<Gameplay>
                     controlledBlock = null;
                     if (onChangeBlock.Invoke())
                     {
-                        ChangeControlledBlock();
+                        SpawnBlock();
                     }
                     onChangeBlock = null;
                 }
@@ -107,11 +107,12 @@ public class Gameplay : Singleton<Gameplay>
             #endregion
         }
     }
-    private void ChangeControlledBlock()
+    private void SpawnBlock()
     {
         //To do: spawn another block to control.
         controlledBlock = GetControlledBlock().GetComponent<Block>();
         controlledBlock.gravityMultiplier = Block.slowGravityMultiplier;
+        snaper.SetBlockColumnOnSpawn();
         controlledBlock.transform.position = Snaper.StartPosition;
         controlable = true;
         //Debug.Log("In");
