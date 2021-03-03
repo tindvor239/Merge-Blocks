@@ -144,19 +144,19 @@ public class Gameplay : Singleton<Gameplay>
     private bool IsEndTurn()
     {
         //If any nearby same point blocks.
-        for(int row = 0; row < Grid.Instance.Blocks.Rows.Count; row++)
+        for(int row = 0; row < Grid.Instance.MasterBlocks.Rows.Count; row++)
         {
-            for(int column = 0; column < Grid.Instance.Blocks.Rows[row].Columns.Count; column++)
+            for(int column = 0; column < Grid.Instance.MasterBlocks.Rows[row].Columns.Count; column++)
             {
-                if(Grid.Instance.Blocks.Rows[row].Columns[column] != null)
+                if(Grid.Instance.MasterBlocks.Rows[row].Columns[column] != null)
                 {
-                    GameObject currentBlock = Grid.Instance.Blocks.Rows[row].Columns[column];
-                    if (column + 1 < Grid.Instance.Blocks.Rows[row].Columns.Count)
+                    GameObject currentBlock = Grid.Instance.MasterBlocks.Rows[row].Columns[column];
+                    if (column + 1 < Grid.Instance.MasterBlocks.Rows[row].Columns.Count)
                     {
                         int nearbyColumn = column + 1;
-                        if(Grid.Instance.Blocks.Rows[row].Columns[nearbyColumn] != null)
+                        if(Grid.Instance.MasterBlocks.Rows[row].Columns[nearbyColumn] != null)
                         {
-                            GameObject nearbyObject = Grid.Instance.Blocks.Rows[row].Columns[nearbyColumn];
+                            GameObject nearbyObject = Grid.Instance.MasterBlocks.Rows[row].Columns[nearbyColumn];
                             if (nearbyObject.GetComponent<Block>() && currentBlock.GetComponent<Block>())
                             {
                                 Block nearbyBlock = nearbyObject.GetComponent<Block>();
@@ -172,19 +172,19 @@ public class Gameplay : Singleton<Gameplay>
             }
         }
         //If any below same point blocks.
-        for(int column = 0; column < Grid.Instance.Blocks.Rows[0].Columns.Count; column++)
+        for(int column = 0; column < Grid.Instance.MasterBlocks.Rows[0].Columns.Count; column++)
         {
-            for(int row = 0; row < Grid.Instance.Blocks.Rows.Count; row++)
+            for(int row = 0; row < Grid.Instance.MasterBlocks.Rows.Count; row++)
             {
-                if(Grid.Instance.Blocks.Rows[row].Columns[column] != null)
+                if(Grid.Instance.MasterBlocks.Rows[row].Columns[column] != null)
                 {
-                    GameObject currentObject = Grid.Instance.Blocks.Rows[row].Columns[column];
+                    GameObject currentObject = Grid.Instance.MasterBlocks.Rows[row].Columns[column];
                     int belowRow = row + 1;
-                    if(belowRow < Grid.Instance.Blocks.Rows.Count)
+                    if(belowRow < Grid.Instance.MasterBlocks.Rows.Count)
                     {
-                        if(Grid.Instance.Blocks.Rows[belowRow].Columns[column] != null)
+                        if(Grid.Instance.MasterBlocks.Rows[belowRow].Columns[column] != null)
                         {
-                            GameObject belowObject = Grid.Instance.Blocks.Rows[belowRow].Columns[column];
+                            GameObject belowObject = Grid.Instance.MasterBlocks.Rows[belowRow].Columns[column];
                             if(belowObject.GetComponent<Block>() && currentObject.GetComponent<Block>())
                             {
                                 Block belowBlock = belowObject.GetComponent<Block>();

@@ -11,7 +11,7 @@ public class Block : MonoBehaviour
     [SerializeField]
     private bool isHit;
 
-    public static float slowGravityMultiplier = 0.01f, normalGravityMultiplier = 1f;
+    public static float slowGravityMultiplier = 0.01f, normalGravityMultiplier = 0.4f, fastGravityMultiplier = 0.6f;
     public float gravityMultiplier = slowGravityMultiplier;
 
     [SerializeField]
@@ -23,7 +23,9 @@ public class Block : MonoBehaviour
     private float limitY;
 
     private Gameplay gameplay;
-
+    public int count = 0;
+    [SerializeField]
+    private int mergeAmount;
     #region Properties
     public static float Gravity { get => 9.81f; }
     public uint Point
@@ -73,10 +75,17 @@ public class Block : MonoBehaviour
     private void Update()
     {
         UpdatePosition(DestinateRow, DestinateColumn);
+        //bool canMerge = mergeAmount != 0 ? true : false;
+        Debug.Log(count);
+        if (mergeAmount == count && count != 0)
+        {
+            Merge(mergeAmount);
+            count = 0;
+        }
     }
     private void FixedUpdate()
     {
-        if(isHit != true)
+        if(isHit != true && mergeAmount == count)
         {
             transform.position -= gravityMultiplier * Gravity * transform.up * Time.deltaTime;
         }
@@ -84,46 +93,69 @@ public class Block : MonoBehaviour
     private void UpdatePosition(int row, int column)
     {
         limitY = Grid.Instance.GetRowPosition(row);
-        if(transform.position.y <= limitY)
+        if(transform.position.y <= limitY && isHit == false)
         {
             transform.position = new Vector2(transform.position.x, limitY);
             OnHit(row, column);
+        }
+        if(isHit)
+        {
+            Debug.Log("Done Merge");
+            int rowBellow = IsBellowEmpty(row, column);
+            bool isBellowEmpty = rowBellow == -1 ? false : true;
+            if (isBellowEmpty)
+            {
+                //To do: if there isn't any block OR at the end of the grid.
+                DestinateRow = rowBellow;
+                Grid.Instance.MasterBlocks.Rows[row].Columns[column] = null;
+                isHit = false;
+            }
+            else // block is at bottom of the grid or above a block.
+            {
+                if (gameplay.ControlledBlock == this)
+                {
+                    int mergeAmount = GetMergeBlocks(row, column);
+                    bool canMerge = mergeAmount != 0 ? true : false;
+                    if (canMerge)
+                    {
+                        Merge(mergeAmount);
+                    }
+                    else
+                    {
+                        gameplay.onChangeBlock += ChangeBlock;
+                    }
+                }
+            }
         }
     }
     private void OnHit(int row, int column)
     {
         currentRow = row;
         currentColumn = column;
-        Grid.Instance.Blocks.Rows[row].Columns[column] = gameObject;
-
-        int mergeAmount = GetAroundBlocksFromIndex(row, column);
-        Debug.Log(row + ", " + column);
-        bool canMerge = mergeAmount != 0 ? true : false;
-        if (canMerge)
+        Grid.Instance.MasterBlocks.Rows[row].Columns[column] = gameObject;
+        count = 0;
+        mergeAmount = GetMergeBlocks(row, column);
+        
+        //else
+        //{
+        //    isHit = true;
+        //}
+        isHit = true;
+        Debug.Log("Hit");
+    }
+    private void RemoveDuplicate(int currentRow, int currentColumn)
+    {
+        for(byte row = 0; row < Grid.Instance.Row; row++)
         {
-            Debug.Log(mergeAmount);
-            Merge(mergeAmount);
-        }
-
-        int rowBellow = IsBellowEmpty(row, column);
-        if (rowBellow != -1)
-        {
-            //To do: if there isn't any block OR at the end of the grid.
-            DestinateRow = rowBellow;
-            Grid.Instance.Blocks.Rows[row].Columns[column] = null;
-            isHit = false;
-        }
-        else
-        {
-            isHit = true;
-            if (gameplay.ControlledBlock == this)
+            if(row != currentRow)
             {
-                gameplay.onChangeBlock += ChangeBlock;
+                if(Grid.Instance.MasterBlocks.Rows[row].Columns[currentColumn] == gameObject)
+                {
+                    Grid.Instance.MasterBlocks.Rows[row].Columns[currentColumn] = null;
+                }
             }
         }
-
     }
-
     private void Merge(int amount)
     {
         // Get around blocks => int.
@@ -133,80 +165,67 @@ public class Block : MonoBehaviour
             Point += Point;
         }
     }
-    private int GetAroundBlocksFromIndex(int row, int column)
+    private int GetMergeBlocks(int row, int column)
     {
         int result = 0;
-        for (int rowIndex = row - 1; rowIndex <= row + 1; rowIndex++)
+        for (int rowIndex = row - 1; rowIndex <= row; rowIndex++)
         {
-            if(rowIndex >= 0 && rowIndex < Grid.Instance.Blocks.Rows.Count)
+            if(rowIndex >= 0 && rowIndex < Grid.Instance.MasterBlocks.Rows.Count)
             {
                 //Get Left Block and Right Block.
                 if(rowIndex == row)
                 {
                     for(int columnIndex = column - 1; columnIndex <= column + 1; columnIndex++)
                     {
-                        if (columnIndex != column && columnIndex >= 0 && columnIndex < Grid.Instance.Blocks.Rows[rowIndex].Columns.Count)
+                        if (columnIndex != column && columnIndex >= 0 && columnIndex < Grid.Instance.MasterBlocks.Rows[rowIndex].Columns.Count)
                         {
-                            GameObject currentObject = Grid.Instance.Blocks.Rows[rowIndex].Columns[columnIndex];
+                            GameObject currentObject = Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[columnIndex];
                             if (currentObject != null && currentObject != gameObject && currentObject.GetComponent<Block>())
                             {
                                 Block currentBlock = currentObject.GetComponent<Block>();
 
-                                GameObject gameObject = Grid.Instance.Blocks.Rows[row].Columns[column];
+                                GameObject gameObject = Grid.Instance.MasterBlocks.Rows[row].Columns[column];
                                 if(gameObject != null && gameObject.GetComponent<Block>())
                                 {
                                     if(currentBlock.Point == Point)
                                     {
                                         result++;
-                                        PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(Grid.Instance.Blocks.Rows[rowIndex].Columns[columnIndex]);
-                                        Debug.Log(Grid.Instance.Blocks.Rows[rowIndex].Columns[columnIndex]);
-                                        Grid.Instance.Blocks.Rows[rowIndex].Columns[columnIndex] = null;
+                                        if(columnIndex < column)
+                                        {
+                                            Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[columnIndex].GetComponent<Block>().OnMoveLeft(transform.position.x, this);
+                                        }
+                                        else
+                                        {
+                                            Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[columnIndex].GetComponent<Block>().OnMoveRight(transform.position.x, this);
+                                        }
+                                        Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[columnIndex] = null;
                                     }
                                 }
                             }
                         }
                     }
                 }
-                //Get Up Block and Down Block.
+                //Get Down Block.
                 else
                 {
-                    if(column >= 0 && column < Grid.Instance.Blocks.Rows[rowIndex].Columns.Count)
+                    if(column >= 0 && column < Grid.Instance.MasterBlocks.Rows[rowIndex].Columns.Count)
                     {
-                        GameObject currentObject = Grid.Instance.Blocks.Rows[rowIndex].Columns[column];
+                        GameObject currentObject = Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column];
                         if (currentObject != null && currentObject != gameObject)
                         {
-                            Block currentBlock = Grid.Instance.Blocks.Rows[rowIndex].Columns[column].GetComponent<Block>();
+                            Block currentBlock = Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column].GetComponent<Block>();
                             if (currentBlock && currentBlock.Point == Point)
                             {
                                 result++;
-                                PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(Grid.Instance.Blocks.Rows[rowIndex].Columns[column]);
-                                Debug.Log(Grid.Instance.Blocks.Rows[rowIndex].Columns[column]);
-                                Grid.Instance.Blocks.Rows[rowIndex].Columns[column] = null;
+                                Debug.Log(Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column]);
+                                Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column].GetComponent<Block>().OnMoveUp(transform.position.y, this);
+                                Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column] = null;
                             }
                         }
                     }
                 }
             }
         }
-        return result;
-    }
-    private int[] GetInit()
-    {
-        int[] result = new int[2];
-        for(byte row = 0; row < Grid.Instance.Blocks.Rows.Count; row++)
-        {
-            for (byte column = 0; column < Grid.Instance.Blocks.Rows[row].Columns.Count; column++)
-            {
-                if(Grid.Instance.Blocks.Rows[row].Columns[column] != null && Grid.Instance.Blocks.Rows[row].Columns[column] == gameObject)
-                {
-                    result[0] = row;
-                    result[1] = column;
-                    return result;
-                }
-            }
-        }
-        result[0] = -1;
-        result[1] = -1;
         return result;
     }
     private bool ChangeBlock()
@@ -219,7 +238,7 @@ public class Block : MonoBehaviour
     }
     public void Push()
     {
-        gravityMultiplier = normalGravityMultiplier;
+        gravityMultiplier = fastGravityMultiplier;
         if (gameplay.ControlledBlock == this)
         {
             gameplay.onHitEvent += Uncontrolable;
@@ -230,7 +249,7 @@ public class Block : MonoBehaviour
         int result = -1;
         if(row - 1 >= 0)
         {
-            if(Grid.Instance.Blocks.Rows[row - 1].Columns[column] == null)
+            if(Grid.Instance.MasterBlocks.Rows[row - 1].Columns[column] == null)
             {
                 result = row - 1;
                 return result;
@@ -241,11 +260,11 @@ public class Block : MonoBehaviour
     public int[] GetCurrentIndex()
     {
         int[] result = new int[2];
-        for (int row = Grid.Instance.Blocks.Rows.Count - 1; row >= 0; row--)
+        for (int row = Grid.Instance.MasterBlocks.Rows.Count - 1; row >= 0; row--)
         {
-            for (int column = 0; column < Grid.Instance.Blocks.Rows[row].Columns.Count; column++)
+            for (int column = 0; column < Grid.Instance.MasterBlocks.Rows[row].Columns.Count; column++)
             {
-                if (Grid.Instance.Blocks.Rows[row].Columns[column] == gameObject)
+                if (Grid.Instance.MasterBlocks.Rows[row].Columns[column] == gameObject)
                 {
                     result[0] = row;
                     result[1] = column;
@@ -254,5 +273,65 @@ public class Block : MonoBehaviour
             }
         }
         return result;
+    }
+    public void OnMoveUp(float destinationY, Block block)
+    {
+        StartCoroutine(MoveUpAndDestroy(destinationY, block));
+    }
+    IEnumerator MoveUpAndDestroy(float destinationY, Block block)
+    {
+        while(transform.position.y < destinationY)
+        {
+            transform.position += normalGravityMultiplier * Gravity * transform.up * Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        if(transform.position.y >= destinationY)
+        {
+            transform.position = new Vector2(transform.position.x, destinationY);
+            block.count++;
+            Debug.Log(block.count);
+            Debug.Log("Done");
+            PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(gameObject);
+        }
+    }
+    public void OnMoveLeft(float destinationX, Block block)
+    {
+        StartCoroutine(MoveLeftAndDestroy(destinationX, block));
+    }
+    IEnumerator MoveLeftAndDestroy(float destinationX, Block block)
+    {
+        while (transform.position.x > destinationX)
+        {
+            transform.position -= normalGravityMultiplier * Gravity * transform.right * Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        if (transform.position.x <= destinationX)
+        {
+            transform.position = new Vector2(transform.position.x, destinationX);
+            block.count++;
+            Debug.Log(block.count);
+            Debug.Log("Done");
+            PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(gameObject);
+        }
+    }
+    public void OnMoveRight(float destinationX, Block block)
+    {
+        StartCoroutine(MoveRightAndDestroy(destinationX, block));
+    }
+    IEnumerator MoveRightAndDestroy(float destinationX, Block block)
+    {
+        while (transform.position.x < destinationX)
+        {
+            transform.position += normalGravityMultiplier * Gravity * transform.right * Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        if (transform.position.x >= destinationX)
+        {
+            transform.position = new Vector2(transform.position.x, destinationX);
+            block.count++;
+            Debug.Log(block.count);
+            Debug.Log("Done");
+            PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(gameObject);
+        }
     }
 }

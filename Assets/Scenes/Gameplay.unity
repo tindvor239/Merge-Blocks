@@ -152,7 +152,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   row: 7
   column: 5
-  blocks:
+  masterBlocks:
     Rows:
     - columns:
       - {fileID: 0}
@@ -196,6 +196,7 @@ MonoBehaviour:
       - {fileID: 0}
       - {fileID: 0}
       - {fileID: 0}
+  canSpawn: 0
 --- !u!4 &11346729
 Transform:
   m_ObjectHideFlags: 0

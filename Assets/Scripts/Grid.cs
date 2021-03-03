@@ -13,17 +13,21 @@ public class Grid : Singleton<Grid>
 
     [Header("Blocks")]
     [SerializeField]
-    private Serializable2DArray blocks = null;
+    private Serializable2DArray masterBlocks = null;
+    
+    public bool canSpawn = false;
 
     private static Vector2 defaultPosition = new Vector2(0, 0.1f);
     private static float defaultSpace = 0.19f;
     private static float defaultSize = 1.3f;
     private byte lastRow = 0, lastColumn = 0;
 
+    public delegate bool OnCheckGrid();
+    public event OnCheckGrid onCheckGrid;
     #region Properties
     public byte Row { get => row; }
     public byte Column { get => column; }
-    public Serializable2DArray Blocks { get => blocks; }
+    public Serializable2DArray MasterBlocks { get => masterBlocks; }
     public bool IsFull { get => IsGridFull(); }
     public static Vector2 DefaultPosition { get => defaultPosition; set => defaultPosition = value; }
     public static float DefaultSpace { get => defaultSpace; set => defaultSpace = value; }
@@ -36,7 +40,7 @@ public class Grid : Singleton<Grid>
         #region Singleton
         #if UNITY_EDITOR
         base.Awake();
-        #endif
+#endif
         #endregion
     }
 
@@ -47,7 +51,10 @@ public class Grid : Singleton<Grid>
     // Update is called once per frame
     private void Update()
     {
-        
+        if(onCheckGrid != null)
+        {
+            canSpawn = onCheckGrid.Invoke();
+        }
     }
 
     // OnValidate is called once when value is changed in inspector
@@ -77,7 +84,7 @@ public class Grid : Singleton<Grid>
     }
     public bool IsGridFull()
     {
-        foreach(RowOfObjects row in blocks.Rows)
+        foreach(RowOfObjects row in masterBlocks.Rows)
         {
             foreach(GameObject gameObject in row.Columns)
             {
@@ -100,10 +107,10 @@ public class Grid : Singleton<Grid>
     public int GetEmptyRowIndex(int column)
     {
         int result = -1;
-        for(byte row = 0; row < blocks.Rows.Count; row++)
+        for(byte row = 0; row < masterBlocks.Rows.Count; row++)
         {
             
-            if(blocks.Rows[row].Columns[column] == null)
+            if(masterBlocks.Rows[row].Columns[column] == null)
             {
                 result = row;
                 return result;

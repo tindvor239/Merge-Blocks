@@ -50,23 +50,28 @@ public class Snaper : Singleton<Snaper>
     }
     public void SetBlockColumnOnSpawn()
     {
-        snapableTransforms = GetSnapablePositions();
-        trimedSnapableTransform = TrimSnapableTransforms();
-        for (byte column = 0; column < trimedSnapableTransform.Count; column++)
+        int emptyRowIndex = Grid.Instance.GetEmptyRowIndex(snapColumn);
+        if(emptyRowIndex == -1)
         {
-            if (trimedSnapableTransform[column] != null)
+            snapableTransforms = GetSnapablePositions();
+            trimedSnapableTransform = TrimSnapableTransforms();
+            for (byte column = 0; column < trimedSnapableTransform.Count; column++)
             {
-                if (Gameplay.Instance.ControlledBlock != null && Gameplay.Instance.ControlledBlock.IsHit == false)
+                if (trimedSnapableTransform[column] != null)
                 {
-                    Gameplay.Instance.ControlledBlock.transform.position = new Vector2(nearestPosition.x, Gameplay.Instance.ControlledBlock.transform.position.y);
+                    snapColumn = ConvertSnapTransformColumnToGridColumn(column);
+                    nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
+                    startPosition = new Vector2(nearestPosition.x, startPosition.y);
+                    break;
                 }
-                snapColumn = ConvertSnapTransformColumnToGridColumn(column);
-                Gameplay.Instance.ControlledBlock.DestinateColumn = snapColumn;
-                Gameplay.Instance.ControlledBlock.DestinateRow = Grid.Instance.GetEmptyRowIndex(snapColumn);
-                nearestPosition = new Vector2(trimedSnapableTransform[column].transform.position.x, nearestPosition.y);
-                startPosition = new Vector2(nearestPosition.x, startPosition.y);
-                break;
             }
+            emptyRowIndex = Grid.Instance.GetEmptyRowIndex(snapColumn);
+        }
+        Gameplay.Instance.ControlledBlock.DestinateColumn = snapColumn;
+        Gameplay.Instance.ControlledBlock.DestinateRow = emptyRowIndex;
+        if (Gameplay.Instance.ControlledBlock != null && Gameplay.Instance.ControlledBlock.IsHit == false)
+        {
+            Gameplay.Instance.ControlledBlock.transform.position = startPosition;
         }
     }
     public void SwitchBlockPosition()
@@ -159,8 +164,8 @@ public class Snaper : Singleton<Snaper>
         for (byte column = 0; column < defaultSnapTransforms.Count; column++)
         {
             byte row = (byte)(Grid.Instance.Row - 1);
-            if (Grid.Instance.Blocks.Rows[row].Columns[column] == null || Grid.Instance.Blocks.Rows[row].Columns[column] != null
-                && Gameplay.Instance.ControlledBlock != null && Grid.Instance.Blocks.Rows[row].Columns[column] == Gameplay.Instance.ControlledBlock.gameObject)
+            if (Grid.Instance.MasterBlocks.Rows[row].Columns[column] == null || Grid.Instance.MasterBlocks.Rows[row].Columns[column] != null
+                && Gameplay.Instance.ControlledBlock != null && Grid.Instance.MasterBlocks.Rows[row].Columns[column] == Gameplay.Instance.ControlledBlock.gameObject)
             {
                 snapablePositions.Add(defaultSnapTransforms[column]);
             }
