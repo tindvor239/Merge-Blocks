@@ -18,12 +18,13 @@ public class Grid : Singleton<Grid>
     public bool canSpawn = false;
 
     private static Vector2 defaultPosition = new Vector2(0, 0.1f);
-    private static float defaultSpace = 0.19f;
-    private static float defaultSize = 1.3f;
+    private static float defaultSpace = 1.1f;
+    private static float defaultSize = 1.0f;
     private byte lastRow = 0, lastColumn = 0;
 
-    public delegate bool OnCheckGrid();
-    public event OnCheckGrid onCheckGrid;
+    public delegate void OnRearrangeGrid();
+    public event OnRearrangeGrid onRearrangeGrid;
+
     #region Properties
     public byte Row { get => row; }
     public byte Column { get => column; }
@@ -51,9 +52,10 @@ public class Grid : Singleton<Grid>
     // Update is called once per frame
     private void Update()
     {
-        if(onCheckGrid != null)
+        if(onRearrangeGrid != null)
         {
-            canSpawn = onCheckGrid.Invoke();
+            onRearrangeGrid.Invoke();
+            onRearrangeGrid = null;
         }
     }
 
@@ -76,6 +78,62 @@ public class Grid : Singleton<Grid>
         //    blocks.Rows[index] = new RowOfObjects();
         //    blocks.Rows[index].Columns = columns.ToList();
         //}
+    }
+    public void RearrangeGrid()
+    {
+        for(int column = 0; column < this.column; column++)
+        {
+            if(isColumnArranged(column) == false)
+            {
+                MoveDown(column);
+                Debug.Log("Not arrange yet");
+            }
+        }
+        Debug.Log("All arranged");
+            Gameplay.Instance.onChangeBlock += ChangeBlock;
+    }
+    private bool ChangeBlock()
+    {
+        return true;
+    }
+    private bool isColumnArranged(in int column)
+    {
+        int emptyRow = GetEmptyRowIndex(column);
+        Debug.Log("empty row: "+ emptyRow);
+        if (emptyRow != -1)
+        {
+            int row = GetBlockRowIndexFromTop(column);
+            Debug.Log("row: " + row);
+            if (row > emptyRow && row != -1)
+            {
+                Debug.Log("In");
+                return false;
+            }
+        }
+        return true;
+    }
+    private void MoveDown(in int column)
+    {
+        List<GameObject> moveBlocks = new List<GameObject>();
+        for (byte row = 0; row < this.row; row++)
+        {
+            if (masterBlocks.Rows[row].Columns[column] != null)
+            {
+                moveBlocks.Add(masterBlocks.Rows[row].Columns[column]);
+                masterBlocks.Rows[row].Columns[column] = null;
+            }
+        }
+        int destinateRow = 0;
+        foreach (GameObject block in moveBlocks)
+        {
+            if (masterBlocks.Rows[destinateRow].Columns[column] == null && destinateRow < this.row)
+            {
+                masterBlocks.Rows[destinateRow].Columns[column] = block;
+                Debug.Log(block.name);
+                block.GetComponent<Block>().MoveDown(destinateRow);
+                row++;
+            }
+        }
     }
     public float GetRowPosition(int row)
     {
@@ -106,16 +164,39 @@ public class Grid : Singleton<Grid>
     }
     public int GetEmptyRowIndex(int column)
     {
-        int result = -1;
         for(byte row = 0; row < masterBlocks.Rows.Count; row++)
         {
             
             if(masterBlocks.Rows[row].Columns[column] == null)
             {
-                result = row;
-                return result;
+                return row;
             }
         }
-        return result;
+        return -1;
+    }
+    private int GetBlockRowIndexFromTop(int column)
+    {
+        for(int row = this.row - 1; row >= 0; row--)
+        {
+            Debug.Log(column);
+            Debug.Log(row);
+            if(masterBlocks.Rows[row].Columns[column] != null)
+            {
+                return row;
+            }
+        }
+        return -1;
+    }
+    private int[] GetBlockIndex(int row)
+    {
+        for(int column = 0; column < this.column; column++)
+        {
+            if(masterBlocks.Rows[row].Columns[column] != null)
+            {
+                int[] blockIndex = { row, column };
+                return blockIndex;
+            }
+        }
+        return new int[] { -1, -1 };
     }
 }

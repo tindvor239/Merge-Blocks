@@ -13,7 +13,7 @@ public class Snaper : Singleton<Snaper>
     //will be unserialize.
     private int snapColumn;
     private Vector2 nearestPosition = new Vector2();
-    private static Vector2 startPosition = new Vector2(0, 1.1f);
+    private static Vector2 startPosition = new Vector2(0, 6f);
     private float nearestDistance = 0;
     #region Properties
     public Vector2 NearestPosition

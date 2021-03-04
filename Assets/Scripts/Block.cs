@@ -11,7 +11,7 @@ public class Block : MonoBehaviour
     [SerializeField]
     private bool isHit;
 
-    public static float slowGravityMultiplier = 0.01f, normalGravityMultiplier = 0.4f, fastGravityMultiplier = 0.6f;
+    public static float slowGravityMultiplier = 0.5f, normalGravityMultiplier = 1f, fastGravityMultiplier = 1.2f;
     public float gravityMultiplier = slowGravityMultiplier;
 
     [SerializeField]
@@ -24,6 +24,7 @@ public class Block : MonoBehaviour
 
     private Gameplay gameplay;
     public int count = 0;
+    private bool doneMerge = true;
     [SerializeField]
     private int mergeAmount;
     #region Properties
@@ -72,20 +73,53 @@ public class Block : MonoBehaviour
     {
         gameplay = Gameplay.Instance;
     }
+    private void OnEnable()
+    {
+        mergeAmount = 0;
+        count = 0;
+        doneMerge = true;
+    }
     private void Update()
     {
         UpdatePosition(DestinateRow, DestinateColumn);
-        //bool canMerge = mergeAmount != 0 ? true : false;
-        Debug.Log(count);
-        if (mergeAmount == count && count != 0)
-        {
-            Merge(mergeAmount);
-            count = 0;
-        }
+        
+        //bool canMerge = mergeAmount == count && count != 0 ? true : false;
+        //if (canMerge)
+        //{
+        //    Debug.Log("In");
+        //    Merge(mergeAmount);
+        //    int rowBellow = IsBellowEmpty(DestinateRow, DestinateColumn);
+        //    bool isBellowEmpty = rowBellow == -1 ? false : true;
+        //    if (isBellowEmpty)
+        //    {
+        //        //To do: if there isn't any block OR at the end of the grid.
+        //        DestinateRow = rowBellow;
+        //        Grid.Instance.MasterBlocks.Rows[currentRow].Columns[DestinateColumn] = null;
+        //        isHit = false;
+        //        //DestinateRow = Grid.Instance.GetEmptyRowIndex(column);
+        //    }
+        //    else // block is at bottom of the grid or above a block.
+        //    {
+        //        mergeAmount = GetMergeBlocks(currentRow, currentColumn);
+        //        Debug.Log(mergeAmount);
+        //    }
+        //    mergeAmount = 0;
+        //    count = 0;
+        //}
+        //if (count == 0 && mergeAmount == 0)
+        //{
+        //    if(isHit)
+        //    {
+        //        if (gameplay.ControlledBlock == this)
+        //        {
+        //            gameplay.onChangeBlock += ChangeBlock;
+        //        }
+        //    }
+        //}
     }
     private void FixedUpdate()
     {
-        if(isHit != true && mergeAmount == count)
+        if(isHit == false)
         {
             transform.position -= gravityMultiplier * Gravity * transform.up * Time.deltaTime;
         }
@@ -98,35 +132,6 @@ public class Block : MonoBehaviour
             transform.position = new Vector2(transform.position.x, limitY);
             OnHit(row, column);
         }
-        if(isHit)
-        {
-            Debug.Log("Done Merge");
-            int rowBellow = IsBellowEmpty(row, column);
-            bool isBellowEmpty = rowBellow == -1 ? false : true;
-            if (isBellowEmpty)
-            {
-                //To do: if there isn't any block OR at the end of the grid.
-                DestinateRow = rowBellow;
-                Grid.Instance.MasterBlocks.Rows[row].Columns[column] = null;
-                isHit = false;
-            }
-            else // block is at bottom of the grid or above a block.
-            {
-                if (gameplay.ControlledBlock == this)
-                {
-                    int mergeAmount = GetMergeBlocks(row, column);
-                    bool canMerge = mergeAmount != 0 ? true : false;
-                    if (canMerge)
-                    {
-                        Merge(mergeAmount);
-                    }
-                    else
-                    {
-                        gameplay.onChangeBlock += ChangeBlock;
-                    }
-                }
-            }
-        }
     }
     private void OnHit(int row, int column)
     {
@@ -135,13 +140,9 @@ public class Block : MonoBehaviour
         Grid.Instance.MasterBlocks.Rows[row].Columns[column] = gameObject;
         count = 0;
         mergeAmount = GetMergeBlocks(row, column);
-        
-        //else
-        //{
-        //    isHit = true;
-        //}
+        Grid.Instance.onRearrangeGrid += Grid.Instance.RearrangeGrid;
         isHit = true;
-        Debug.Log("Hit");
+        doneMerge = false;
     }
     private void RemoveDuplicate(int currentRow, int currentColumn)
     {
@@ -190,7 +191,7 @@ public class Block : MonoBehaviour
                                     if(currentBlock.Point == Point)
                                     {
                                         result++;
-                                        if(columnIndex < column)
+                                        if(columnIndex > column)
                                         {
                                             Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[columnIndex].GetComponent<Block>().OnMoveLeft(transform.position.x, this);
                                         }
@@ -217,7 +218,7 @@ public class Block : MonoBehaviour
                             if (currentBlock && currentBlock.Point == Point)
                             {
                                 result++;
-                                Debug.Log(Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column]);
+                                //Debug.Log(Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column]);
                                 Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column].GetComponent<Block>().OnMoveUp(transform.position.y, this);
                                 Grid.Instance.MasterBlocks.Rows[rowIndex].Columns[column] = null;
                             }
@@ -239,7 +240,7 @@ public class Block : MonoBehaviour
     public void Push()
     {
         gravityMultiplier = fastGravityMultiplier;
-        if (gameplay.ControlledBlock == this)
+        if (gameplay != null && gameplay.ControlledBlock != null && gameplay.ControlledBlock == this)
         {
             gameplay.onHitEvent += Uncontrolable;
         }
@@ -289,8 +290,8 @@ public class Block : MonoBehaviour
         {
             transform.position = new Vector2(transform.position.x, destinationY);
             block.count++;
-            Debug.Log(block.count);
-            Debug.Log("Done");
+            //Debug.Log(block.count);
+            //Debug.Log($"{block.name}");
             PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(gameObject);
         }
     }
@@ -309,8 +310,7 @@ public class Block : MonoBehaviour
         {
             transform.position = new Vector2(transform.position.x, destinationX);
             block.count++;
-            Debug.Log(block.count);
-            Debug.Log("Done");
+            Debug.Log("Done Move Left");
             PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(gameObject);
         }
     }
@@ -329,9 +329,13 @@ public class Block : MonoBehaviour
         {
             transform.position = new Vector2(transform.position.x, destinationX);
             block.count++;
-            Debug.Log(block.count);
-            Debug.Log("Done");
+            Debug.Log($"{name} Done Move Right");
             PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(gameObject);
         }
+    }
+    public void MoveDown(int destinationY)
+    {
+        isHit = false;
+        DestinateRow = destinationY;
     }
 }
