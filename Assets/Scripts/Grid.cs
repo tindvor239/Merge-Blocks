@@ -14,7 +14,7 @@ public class Grid : Singleton<Grid>
     [Header("Blocks")]
     [SerializeField]
     private Serializable2DArray masterBlocks = null;
-    
+    private List<Block> movedBlocks = new List<Block>();
     public bool canSpawn = false;
 
     private static Vector2 defaultPosition = new Vector2(0, 0.1f);
@@ -22,9 +22,14 @@ public class Grid : Singleton<Grid>
     private static float defaultSize = 1.0f;
     private byte lastRow = 0, lastColumn = 0;
 
+<<<<<<< Updated upstream
     public delegate void OnRearrangeGrid();
     public event OnRearrangeGrid onRearrangeGrid;
 
+=======
+    public delegate void OnSortTile();
+    public event OnSortTile onSortTile;
+>>>>>>> Stashed changes
     #region Properties
     public byte Row { get => row; }
     public byte Column { get => column; }
@@ -52,32 +57,37 @@ public class Grid : Singleton<Grid>
     // Update is called once per frame
     private void Update()
     {
+<<<<<<< Updated upstream
         if(onRearrangeGrid != null)
         {
             onRearrangeGrid.Invoke();
             onRearrangeGrid = null;
+=======
+        if(onSortTile != null)
+        {
+            onSortTile.Invoke();
+            Debug.Log("Sorting");
+            onSortTile = null;
+>>>>>>> Stashed changes
         }
     }
-
-    // OnValidate is called once when value is changed in inspector
-    private void OnValidate()
+    public void PlaceBlock(Vector2 position, GameObject block)
     {
-        #region Unity Editor
-        OnEditor();
-        #endregion
+        int column = Snaper.Instance.ConvertXToColumn(position.x);
+        Debug.Log(column);
+        int row = GetEmptyRowIndex(column);
+        Debug.Log(row);
+        masterBlocks.Rows[row].Columns[column] = block;
+        movedBlocks.Add(block.GetComponent<Block>());
     }
-
-    private void OnEditor()
+    public void MergeAllBlocks()
     {
-        RowOfObjects[] rows = new RowOfObjects[row];
-        GameObject[] columns = new GameObject[column];
-
-        //blocks.Rows = rows.ToList();
-        //for(int index = 0; index < blocks.Rows.Count; index++)
-        //{
-        //    blocks.Rows[index] = new RowOfObjects();
-        //    blocks.Rows[index].Columns = columns.ToList();
-        //}
+        //GET ALL MOVED BLOCKS AND MERGE IT!!
+        //AFTER THAT SORT THE ARRAY
+        //PLACE BLOCKS
+        //ADD MOVED BLOCKS
+        //MERGE BLOCKS
+        //SORT THE ARRAY
     }
     public void RearrangeGrid()
     {
@@ -139,6 +149,11 @@ public class Grid : Singleton<Grid>
     {
         float result = ((row - (this.row / 2)) * defaultSpace) + defaultPosition.y;
         return result;
+    }
+    public int GetPositionToRow(float y)
+    {
+        int row = Mathf.FloorToInt(((y - defaultPosition.y) + ((this.row / 2) * defaultSpace)) / defaultSpace);
+        return row;
     }
     public bool IsGridFull()
     {

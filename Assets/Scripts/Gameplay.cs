@@ -11,16 +11,12 @@ public class Gameplay : Singleton<Gameplay>
     private GameManager gameManager;
     private bool controlable = false;
 
-    public delegate bool OnHit();
-    public event OnHit onHitEvent;
-
     public delegate bool OnChangeBlock();
     public event OnChangeBlock onChangeBlock;
-
     [SerializeField]
-    private Block controlledBlock;
+    private Block controllingBlock;
     #region Properties
-    public Block ControlledBlock { get => controlledBlock; }
+    public Block ControllingBlock { get => controllingBlock; }
     #endregion
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
@@ -62,20 +58,12 @@ public class Gameplay : Singleton<Gameplay>
                 {
                     if (Input.GetMouseButton(0))
                     {
-                        snaper.SwitchBlockPosition();
+                        MoveBlockX();
                     }
-                }
-
-                //This event will called once when controlling block's hit.
-                if (onHitEvent != null)
-                {
-                    controlable = onHitEvent.Invoke();
-                    //Debug.Log(controlable);
-                    onHitEvent = null;
                 }
                 if (onChangeBlock != null)
                 {
-                    controlledBlock = null;
+                    controllingBlock = null;
                     if (onChangeBlock.Invoke())
                     {
                         SpawnBlock();
@@ -97,9 +85,9 @@ public class Gameplay : Singleton<Gameplay>
                     if (Input.GetMouseButtonUp(0))
                     {
                         //To do Block will be drop.
-                        if (ControlledBlock != null)
+                        if (ControllingBlock != null)
                         {
-                            ControlledBlock.Push();
+                            ControllingBlock.Push();
                         }
                     }
                 }
@@ -110,10 +98,11 @@ public class Gameplay : Singleton<Gameplay>
     private void SpawnBlock()
     {
         //To do: spawn another block to control.
-        controlledBlock = GetControlledBlock().GetComponent<Block>();
-        controlledBlock.gravityMultiplier = Block.slowGravityMultiplier;
-        snaper.SetBlockColumnOnSpawn();
-        controlledBlock.transform.position = Snaper.StartPosition;
+        controllingBlock = GetControlledBlock().GetComponent<Block>();
+        controllingBlock.gravityMultiplier = Block.slowGravityMultiplier;
+        int row = snaper.ConvertXToColumn(snaper.SnapColumn);
+        controllingBlock.MoveDown(Grid.Instance.GetRowPosition(row));
+        controllingBlock.transform.position = Snaper.StartPosition;
         controlable = true;
         //Debug.Log("In");
     }
@@ -201,8 +190,9 @@ public class Gameplay : Singleton<Gameplay>
         }
         return true;
     }
-    private void OnControlledBlockMovingDown(int row)
+    private void MoveBlockX()
     {
-
+        Debug.Log("Player Controlling Block");
+        snaper.SwitchBlockPosition();
     }
 }

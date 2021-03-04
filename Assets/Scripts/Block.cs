@@ -14,19 +14,17 @@ public class Block : MonoBehaviour
     public static float slowGravityMultiplier = 0.5f, normalGravityMultiplier = 1f, fastGravityMultiplier = 1.2f;
     public float gravityMultiplier = slowGravityMultiplier;
 
-    [SerializeField]
-    private int currentRow;
-    [SerializeField]
-    private int currentColumn;
-    [SerializeField]
-    private int destinateRow, destinateColumn;
     private float limitY;
 
     private Gameplay gameplay;
+<<<<<<< Updated upstream
     public int count = 0;
     private bool doneMerge = true;
     [SerializeField]
     private int mergeAmount;
+=======
+
+>>>>>>> Stashed changes
     #region Properties
     public static float Gravity { get => 9.81f; }
     public uint Point
@@ -63,9 +61,11 @@ public class Block : MonoBehaviour
             return isHit;
         }
          set => isHit = value; }
-    public int DestinateRow { get => destinateRow; set => destinateRow = value; }
-    public int DestinateColumn { get => destinateColumn; set => destinateColumn = value; }
     #endregion
+
+    public delegate void OnHitEvent();
+    public event OnHitEvent onHit;
+
     private void Awake()
     {
     }
@@ -81,6 +81,7 @@ public class Block : MonoBehaviour
     }
     private void Update()
     {
+<<<<<<< Updated upstream
         UpdatePosition(DestinateRow, DestinateColumn);
         
         //bool canMerge = mergeAmount == count && count != 0 ? true : false;
@@ -123,6 +124,18 @@ public class Block : MonoBehaviour
         {
             transform.position -= gravityMultiplier * Gravity * transform.up * Time.deltaTime;
         }
+=======
+        if(onHit != null)
+        {
+            onHit.Invoke();
+            
+            onHit = null;
+        }
+    }
+    private void FixedUpdate()
+    {
+
+>>>>>>> Stashed changes
     }
     private void UpdatePosition(int row, int column)
     {
@@ -130,6 +143,7 @@ public class Block : MonoBehaviour
         if(transform.position.y <= limitY && isHit == false)
         {
             transform.position = new Vector2(transform.position.x, limitY);
+<<<<<<< Updated upstream
             OnHit(row, column);
         }
     }
@@ -143,6 +157,44 @@ public class Block : MonoBehaviour
         Grid.Instance.onRearrangeGrid += Grid.Instance.RearrangeGrid;
         isHit = true;
         doneMerge = false;
+=======
+            onHit += OnHit;
+        }
+        //if(isHit)
+        //{
+        //    Debug.Log("Done Merge");
+        //    int rowBellow = IsBellowEmpty(row, column);
+        //    bool isBellowEmpty = rowBellow == -1 ? false : true;
+        //    if (isBellowEmpty)
+        //    {
+        //        //To do: if there isn't any block OR at the end of the grid.
+        //        DestinateRow = rowBellow;
+        //        Grid.Instance.MasterBlocks.Rows[row].Columns[column] = null;
+        //        isHit = false;
+        //    }
+        //    else // block is at bottom of the grid or above a block.
+        //    {
+        //        if (gameplay.ControlledBlock == this)
+        //        {
+        //            int mergeAmount = GetMergeBlocks(row, column);
+        //            bool canMerge = mergeAmount != 0 ? true : false;
+        //            if (canMerge)
+        //            {
+        //                Merge(mergeAmount);
+        //            }
+        //            else
+        //            {
+        //                gameplay.onChangeBlock += ChangeBlock;
+        //            }
+        //        }
+        //    }
+        //}
+    }
+    //TO DO: GET ALL NEIGHBOUR!!!
+    private void OnHit()
+    {
+        isHit = true;
+>>>>>>> Stashed changes
     }
     private void RemoveDuplicate(int currentRow, int currentColumn)
     {
@@ -166,6 +218,7 @@ public class Block : MonoBehaviour
             Point += Point;
         }
     }
+<<<<<<< Updated upstream
     private int GetMergeBlocks(int row, int column)
     {
         int result = 0;
@@ -229,6 +282,8 @@ public class Block : MonoBehaviour
         }
         return result;
     }
+=======
+>>>>>>> Stashed changes
     private bool ChangeBlock()
     {
         return true;
@@ -240,10 +295,13 @@ public class Block : MonoBehaviour
     public void Push()
     {
         gravityMultiplier = fastGravityMultiplier;
+<<<<<<< Updated upstream
         if (gameplay != null && gameplay.ControlledBlock != null && gameplay.ControlledBlock == this)
         {
             gameplay.onHitEvent += Uncontrolable;
         }
+=======
+>>>>>>> Stashed changes
     }
     private int IsBellowEmpty(int row, int column)
     {
@@ -275,6 +333,7 @@ public class Block : MonoBehaviour
         }
         return result;
     }
+<<<<<<< Updated upstream
     public void OnMoveUp(float destinationY, Block block)
     {
         StartCoroutine(MoveUpAndDestroy(destinationY, block));
@@ -315,13 +374,17 @@ public class Block : MonoBehaviour
         }
     }
     public void OnMoveRight(float destinationX, Block block)
+=======
+    public void MoveDown(float limitY)
+>>>>>>> Stashed changes
     {
-        StartCoroutine(MoveRightAndDestroy(destinationX, block));
+        StartCoroutine(OnMoveDown(limitY));
     }
-    IEnumerator MoveRightAndDestroy(float destinationX, Block block)
+    IEnumerator OnMoveDown(float limitY)
     {
-        while (transform.position.x < destinationX)
+        while(transform.position.y > limitY)
         {
+<<<<<<< Updated upstream
             transform.position += normalGravityMultiplier * Gravity * transform.right * Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
@@ -331,7 +394,13 @@ public class Block : MonoBehaviour
             block.count++;
             Debug.Log($"{name} Done Move Right");
             PoolParty.Instance.GetPool("Blocks Pool").GetBackToPool(gameObject);
+=======
+            transform.position -= gravityMultiplier * Gravity * transform.up * Time.deltaTime;
+            yield return new WaitForFixedUpdate();
+>>>>>>> Stashed changes
         }
+        transform.position = new Vector2(transform.position.x, limitY);
+        onHit += OnHit;
     }
     public void MoveDown(int destinationY)
     {
