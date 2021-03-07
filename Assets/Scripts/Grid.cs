@@ -1,52 +1,41 @@
 ﻿using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
+using System;
 
 [ExecuteInEditMode]
 public class Grid : Singleton<Grid>
 {
     [Header("Grid Size")]
     [SerializeField]
-    private byte row = 7; //row of a grid
+    private static byte row = 7; //row of a grid
     [SerializeField]
-    private byte column = 5;  // column of a grid
+    private static byte column = 5;  // column of a grid
 
     [Header("Blocks")]
     [SerializeField]
-    private Serializable2DArray masterBlocks = null;
-    private List<Block> movedBlocks = new List<Block>();
-    public bool canSpawn = false;
+    private static Block[,] masterBlocks = new Block[row,column];
 
-    private static Vector2 defaultPosition = new Vector2(0, 0.1f);
+    private Block[,] lastBlocks = new Block[row, column];
+
     private static float defaultSpace = 1.1f;
     private static float defaultSize = 1.0f;
-    private byte lastRow = 0, lastColumn = 0;
 
-<<<<<<< Updated upstream
-    public delegate void OnRearrangeGrid();
-    public event OnRearrangeGrid onRearrangeGrid;
-
-=======
-    public delegate void OnSortTile();
-    public event OnSortTile onSortTile;
->>>>>>> Stashed changes
     #region Properties
-    public byte Row { get => row; }
-    public byte Column { get => column; }
-    public Serializable2DArray MasterBlocks { get => masterBlocks; }
-    public bool IsFull { get => IsGridFull(); }
-    public static Vector2 DefaultPosition { get => defaultPosition; set => defaultPosition = value; }
+    public static byte Row { get => row; }
+    public static byte Column { get => column; }
+    public static Block[,] MasterBlocks { get => masterBlocks; }
     public static float DefaultSpace { get => defaultSpace; set => defaultSpace = value; }
-    public static float DefaultSize { get => defaultSize; set => defaultSize = value; } 
+    public static float DefaultSize { get => defaultSize; set => defaultSize = value; }
     #endregion
-
+    public enum GridState { sort, merge, normal}
+    [SerializeField]
+    public GridState gridState;
     // Awake is called when the script instance is being loaded.
     protected override void Awake()
     {
         #region Singleton
-        #if UNITY_EDITOR
         base.Awake();
-#endif
         #endregion
     }
 
@@ -57,161 +46,64 @@ public class Grid : Singleton<Grid>
     // Update is called once per frame
     private void Update()
     {
-<<<<<<< Updated upstream
-        if(onRearrangeGrid != null)
+        if(Input.GetKey(KeyCode.B))
         {
-            onRearrangeGrid.Invoke();
-            onRearrangeGrid = null;
-=======
-        if(onSortTile != null)
-        {
-            onSortTile.Invoke();
-            Debug.Log("Sorting");
-            onSortTile = null;
->>>>>>> Stashed changes
+            Debug.Log(DebugArray());
         }
     }
-    public void PlaceBlock(Vector2 position, GameObject block)
+    public string DebugArray()
     {
-        int column = Snaper.Instance.ConvertXToColumn(position.x);
-        Debug.Log(column);
-        int row = GetEmptyRowIndex(column);
-        Debug.Log(row);
-        masterBlocks.Rows[row].Columns[column] = block;
-        movedBlocks.Add(block.GetComponent<Block>());
-    }
-    public void MergeAllBlocks()
-    {
-        //GET ALL MOVED BLOCKS AND MERGE IT!!
-        //AFTER THAT SORT THE ARRAY
-        //PLACE BLOCKS
-        //ADD MOVED BLOCKS
-        //MERGE BLOCKS
-        //SORT THE ARRAY
-    }
-    public void RearrangeGrid()
-    {
-        for(int column = 0; column < this.column; column++)
+        string result = "";
+        for(int row = Grid.row; row >= 0; row--)
         {
-            if(isColumnArranged(column) == false)
+            if(row - 1 >= 0)
+                result += $"{row - 1}";
+            else
             {
-                MoveDown(column);
-                Debug.Log("Not arrange yet");
+                result += $" ";
             }
-        }
-        Debug.Log("All arranged");
-            Gameplay.Instance.onChangeBlock += ChangeBlock;
-    }
-    private bool ChangeBlock()
-    {
-        return true;
-    }
-    private bool isColumnArranged(in int column)
-    {
-        int emptyRow = GetEmptyRowIndex(column);
-        Debug.Log("empty row: "+ emptyRow);
-        if (emptyRow != -1)
-        {
-            int row = GetBlockRowIndexFromTop(column);
-            Debug.Log("row: " + row);
-            if (row > emptyRow && row != -1)
+            for(int column = 0; column < Grid.column; column++)
             {
-                Debug.Log("In");
-                return false;
-            }
-        }
-        return true;
-    }
-    private void MoveDown(in int column)
-    {
-        List<GameObject> moveBlocks = new List<GameObject>();
-        for (byte row = 0; row < this.row; row++)
-        {
-            if (masterBlocks.Rows[row].Columns[column] != null)
-            {
-                moveBlocks.Add(masterBlocks.Rows[row].Columns[column]);
-                masterBlocks.Rows[row].Columns[column] = null;
-            }
-        }
-        int destinateRow = 0;
-        foreach (GameObject block in moveBlocks)
-        {
-            if (masterBlocks.Rows[destinateRow].Columns[column] == null && destinateRow < this.row)
-            {
-                masterBlocks.Rows[destinateRow].Columns[column] = block;
-                Debug.Log(block.name);
-                block.GetComponent<Block>().MoveDown(destinateRow);
-                row++;
-            }
-        }
-    }
-    public float GetRowPosition(int row)
-    {
-        float result = ((row - (this.row / 2)) * defaultSpace) + defaultPosition.y;
-        return result;
-    }
-    public int GetPositionToRow(float y)
-    {
-        int row = Mathf.FloorToInt(((y - defaultPosition.y) + ((this.row / 2) * defaultSpace)) / defaultSpace);
-        return row;
-    }
-    public bool IsGridFull()
-    {
-        foreach(RowOfObjects row in masterBlocks.Rows)
-        {
-            foreach(GameObject gameObject in row.Columns)
-            {
-                if(gameObject == null)
+                if(column == 0)
                 {
-                    return false;
+                    result += "     ";
                 }
-                else if(gameObject.GetComponent<Block>())
+                if(row - 1 < 0)
                 {
-                    Block block = gameObject.GetComponent<Block>();
-                    if (block.IsHit == false)
+                    result += $"  {column}";
+                }
+                else
+                {
+                    if(row - 1 >= 0)
                     {
-                        return false;
+                        if(masterBlocks[row - 1, column] == null)
+                        {
+                            result += "  0";
+                        }
+                        else
+                        {
+                            result += $"  {masterBlocks[row - 1, column].Point}";
+                        }
                     }
                 }
+                if(column == Grid.column - 1)
+                {
+                    result += "\n";
+                }
             }
         }
-        return true;
+        return result;
     }
-    public int GetEmptyRowIndex(int column)
+    public float GetLimitY(int column)
     {
-        for(byte row = 0; row < masterBlocks.Rows.Count; row++)
+        if (column > -1 && column < Grid.column)
         {
-            
-            if(masterBlocks.Rows[row].Columns[column] == null)
+            for(byte row = 0; row < Grid.row; row++)
             {
-                return row;
+                if((masterBlocks[row, column] == null))
+                    return row * defaultSpace;
             }
         }
         return -1;
-    }
-    private int GetBlockRowIndexFromTop(int column)
-    {
-        for(int row = this.row - 1; row >= 0; row--)
-        {
-            Debug.Log(column);
-            Debug.Log(row);
-            if(masterBlocks.Rows[row].Columns[column] != null)
-            {
-                return row;
-            }
-        }
-        return -1;
-    }
-    private int[] GetBlockIndex(int row)
-    {
-        for(int column = 0; column < this.column; column++)
-        {
-            if(masterBlocks.Rows[row].Columns[column] != null)
-            {
-                int[] blockIndex = { row, column };
-                return blockIndex;
-            }
-        }
-        return new int[] { -1, -1 };
     }
 }
