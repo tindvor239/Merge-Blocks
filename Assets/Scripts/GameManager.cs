@@ -141,7 +141,6 @@ namespace UnityEngine.CustomComponents
         public void Play()
         {
             SetState(GameState.play);
-            GameController.Instance.OnStart();
         }
         public void MainMenu()
         {

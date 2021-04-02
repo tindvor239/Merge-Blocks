@@ -1,7 +1,10 @@
-﻿using UnityEngine.CustomComponents;
+﻿using UnityEngine;
+using UnityEngine.CustomComponents;
 
 public class Coin : Block
 {
+    [SerializeField]
+    private Animator animator;
     public override uint Point
     {
         get
@@ -32,6 +35,7 @@ public class Coin : Block
     protected override void Start()
     {
         gravityMultiplier = fastGravityMultiplier;
+        animator = GetComponentInChildren<Animator>();
         pool = PoolParty.Instance.GetPool("Coins Pool");
     }
     protected override void Update()
@@ -42,5 +46,10 @@ public class Coin : Block
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
+    }
+
+    public void HitAnimation()
+    {
+        animator.SetBool("play", true);
     }
 }

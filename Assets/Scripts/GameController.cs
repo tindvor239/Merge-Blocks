@@ -102,6 +102,7 @@ namespace UnityEngine.CustomComponents
                             lastX = dropingBlock.transform.position.x;
                             PlaceBlock(dropingBlock);
                             movedBlocks.Add(dropingBlock);
+                            dropingBlock.playConflationEffect = true;
                             GameManager.Instance.GetAndPlayParticle(dropingBlock.transform.position, PoolParty.Instance.GetPool("Hit Effects Pool"));
                             dropingBlock = null;
                             isHit = true;
@@ -392,7 +393,7 @@ namespace UnityEngine.CustomComponents
             List<Sprite> availableCats = new List<Sprite>();
             foreach(Block block in Grid.MasterBlocks)
             {
-                if (block != null && block.Icon != null && block.Point < 128)
+                if (block != null && block.Icon != null && block.Point < 128 && !(block is Coin))
                 {
                     if(!availableCats.Contains(block.Icon.sprite))
                     {
@@ -473,7 +474,7 @@ namespace UnityEngine.CustomComponents
             if (Grid.MasterBlocks[row, column] != null && Grid.MasterBlocks[row, column].GetComponent<Coin>())
             {
                 Coin coin = Grid.MasterBlocks[row, column].GetComponent<Coin>();
-                PoolParty.Instance.GetPool("Coins Pool").GetBackToPool(coin.gameObject);
+                coin.HitAnimation();
                 GameManager.Instance.Money += (int)coin.Point;
             }
             Grid.MasterBlocks[row, column] = block;

@@ -14,10 +14,6 @@
         [SerializeField]
         private bool isFading;
         [SerializeField]
-        private float fadeInPercent;
-        [SerializeField]
-        private float fadeOutPercent;
-        [SerializeField]
         private float fadeInDuration = 1f;
         [SerializeField]
         private float fadeOutDuration = 1f;
