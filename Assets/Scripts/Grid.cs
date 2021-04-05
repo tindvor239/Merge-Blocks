@@ -107,7 +107,7 @@
             return result;
         }
 
-        public static float GetLimitYNotIgnoreCoin(int column)
+        public static float GetLimitY(int column)
         {
             if (column > -1 && column < Grid.column)
             {

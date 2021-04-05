@@ -14,7 +14,7 @@ public class Coin : Block
                 string result = "";
                 foreach(char character in Text)
                 {
-                    if(character != '+')
+                    if(character != 'x')
                     {
                         result += character;
                     }
@@ -28,7 +28,7 @@ public class Coin : Block
         }
         set
         {
-            Text = $"+{value}";
+            Text = $"x{value}";
         }
     }
     // Start is called before the first frame update

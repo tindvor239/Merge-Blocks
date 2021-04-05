@@ -24,7 +24,7 @@ namespace UnityEngine.CustomComponents
 
         #region Properties
         public static GameState GameState { get => gameState; set => gameState = value; }
-        private static uint CurrentLevel
+        public static uint CurrentLevel
         {
             get
             {
@@ -90,6 +90,7 @@ namespace UnityEngine.CustomComponents
         private void Start()
         {
             MainMenu();
+            currentExperience = startExperience;
             //calculate next level experience.
         }
         // Update is called once per frame

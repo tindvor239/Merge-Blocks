@@ -16,13 +16,13 @@ namespace UnityEngine.CustomComponents
         [SerializeField]
         private CustomUIComponent money;
         [SerializeField]
+        private LevelUpUI levelUpUI;
+        [SerializeField]
         private ComplimentUI compliment;
         [SerializeField]
         private ParticleSystem[] horrayParticles;
         [SerializeField]
         private ClearUI clearUI;
-        [SerializeField]
-        private GameObject arrow;
         private float durationTime;
 
         [Header("Setting")]
@@ -58,16 +58,27 @@ namespace UnityEngine.CustomComponents
         public void ShowClearUI(uint point)
         {
             VisibleUI(true, "CLEAR_UI");
-
             ChangeGoal(point);
             StartShowTemporary();
             clearUI.Initialize();
         }
+        public void ShowLevelUpUI()
+        {
+            VisibleUI(true, "LEVELUP_UI");
+            GameManager.GameState = GameState.pause;
+            levelUpUI.Initialized(GameManager.Instance.GetSpriteFromPoint(128));
+        }
+        public void ClaimReward()
+        {
+            GameManager.GameState = GameState.play;
+            VisibleUI(false, "LEVELUP_UI");
+        }
         public void ChangeGoal(in uint point)
         {
             Sprite icon = GameManager.Instance.GetSpriteFromPoint(point);
+            Debug.Log($"icon: {icon}");
             int index = GameManager.Instance.CatImages.IndexOf(icon);
-
+            Debug.Log($"index: {index}");
             GoalCat.sprite = GameManager.Instance.CatImages[index];
             GoalPoint.text = (point).ToString();
         }
@@ -84,11 +95,9 @@ namespace UnityEngine.CustomComponents
                     UIElement.HideUIElement("PAUSE_UI");
                     break;
                 case GameState.pause:
-                    Debug.Log("Pause!!!");
                     UIElement.ShowUIElement("PAUSE_UI");
                     break;
                 case GameState.gameOver:
-                    Debug.Log("GameOver!!!");
                     UIElement.ShowUIElement("GAMEOVER_UI");
                     break;
             }
@@ -97,7 +106,6 @@ namespace UnityEngine.CustomComponents
         {
             GameManager.GameState = GameState.pause;
             durationTime = 0;
-            arrow.SetActive(false);
             onShowTemporaryUI += VisibleUIByTime;
         }
         public void ShowCompliment(int combo)
@@ -115,7 +123,6 @@ namespace UnityEngine.CustomComponents
                 VisibleUI(isVisible, UIname);
                 durationTime = 0;
                 GameManager.GameState = GameState.play;
-                arrow.SetActive(true);
                 onShowTemporaryUI = null;
             }
         }

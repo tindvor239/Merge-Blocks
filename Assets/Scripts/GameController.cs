@@ -32,6 +32,17 @@ namespace UnityEngine.CustomComponents
         [SerializeField]
         [Range(0, 1)]
         private float spawnRate;
+        [Header("Treasure Box")]
+        //Each odd level will drop Treasure box at in that level spawn rate will be 50%.
+        //Each even level will Reward number in that level
+        //Drop maximum will be 1.
+        private static byte maxRewardDrop = 1;
+        [SerializeField]
+        private byte currentRewardDrop = 0;
+        [SerializeField]
+        [Range(0, 1)]
+        private float spawnRewardRate;
+        private bool isOddLevel = false;
         private List<Block> movedBlocks = new List<Block>();
         private List<Block> mergedBlocks = new List<Block>();
         private Dictionary<Block, Vector2> shiftBlocks = new Dictionary<Block, Vector2>();
@@ -243,6 +254,20 @@ namespace UnityEngine.CustomComponents
             dropingBlock.Point = GameManager.Instance.GetPointFromSprite(dropingBlock.Icon.sprite);
             dropingBlock.Icon.gameObject.SetActive(true);
             PoolParty.Instance.GetPool("Cats Pool").GetBackToPool(dropingCat.gameObject);
+
+            if(!isOddLevel && currentRewardDrop <= 0)
+            {
+                float rate = Random.Range(0f, 1f);
+                if (rate <= spawnRewardRate)
+                {
+                    //Show Reward Block...
+                    dropingBlock.Point = 128;
+                    dropingBlock.Icon.sprite = GameManager.Instance.GetSpriteFromPoint(dropingBlock.Point);
+                    UIManager.Instance.ShowLevelUpUI();
+                    currentRewardDrop++;
+                }
+            }
+
             controlable = true;
             dropingCat = null;
             doneChangeBlock = true;
@@ -323,7 +348,18 @@ namespace UnityEngine.CustomComponents
         }
         private void SpawnCoin()
         {
-            if (combo >= 0)
+            if(isOddLevel && currentRewardDrop <= 0)
+            {
+                float rate = Random.Range(0f, 1f);
+                if (rate <= spawnRewardRate)
+                {
+                    //Show Reward Block...
+                    SpawnTreasureBox();
+                }
+            }
+            else
+            {
+                if (combo >= 0)
             {
                 UIManager.Instance.HorrayParticles[0].Play();
                 //Drop coint.point == combo.
@@ -333,11 +369,12 @@ namespace UnityEngine.CustomComponents
                 //Get Random Column.
                 int column = moveableColumns[Random.Range(0, availableColumns.Count)];
                 //Get Row.
-                limitY = Grid.GetLimitYNotIgnoreCoin(column);
+                limitY = Grid.GetLimitY(column);
                 coin.Point = (uint)(combo - 1);
                 coin.transform.position = new Vector2(Grid.GetLimitX(column), 8f);
                 dropingBlock = coin;
                 combo = 0;
+            }
             }
         }
         private void SpawnCat()
@@ -577,9 +614,32 @@ namespace UnityEngine.CustomComponents
             if (GameManager.CurrentExperience >= GameManager.NextLevelExperience)
             {
                 //Levelup...
-                Debug.Log("Levelup");
+                LevelUp();
                 GameManager.LevelUp();
             }
+        }
+        private void LevelUp()
+        {
+            currentRewardDrop = 0;
+            isOddLevel = SpawnBlockOrSpawnTreasure();
+        }
+        private bool SpawnBlockOrSpawnTreasure()
+        {
+            return GameManager.CurrentLevel % 2 == 0 ? false : true;
+        }
+        private void SpawnTreasureBox()
+        {
+            GameObject box = GameManager.Instance.GetPooledObject(PoolParty.Instance.GetPool("Treasure Boxes Pool"));
+            TreasureBox treasureBox = box.GetComponent<TreasureBox>();
+            treasureBox.GetRandomCoin();
+            //Column
+            int column = moveableColumns[Random.Range(0, availableColumns.Count)];
+            //Get Row.
+            limitY = Grid.GetLimitY(column);
+            treasureBox.transform.position = new Vector2(Grid.GetLimitX(column), 8f);
+            dropingBlock = treasureBox;
+            controlable = false;
+            currentRewardDrop++;
         }
         private void Sort()
         {

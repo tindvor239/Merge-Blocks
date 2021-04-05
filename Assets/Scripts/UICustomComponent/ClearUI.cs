@@ -24,7 +24,7 @@ namespace UnityEngine.CustomComponents
         }
         public void Initialize()
         {
-            GoalCat.sprite = GameManager.Instance.CatImages[GameController.Instance.SpawnPoints.Count - 1];
+            GoalCat.sprite = GameManager.Instance.CatImages[GameManager.Instance.CatImages.IndexOf(UIManager.Instance.GoalCat.sprite)];
             CatScaleInEffect(new Vector3(), new Vector3(1, 1, 1), Ease.Linear);
             StartAnimate(new Vector3(0, 0, 180), 2f, 1f);
             PlayParticles();
