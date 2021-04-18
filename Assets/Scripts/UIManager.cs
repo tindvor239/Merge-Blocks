@@ -23,10 +23,6 @@ namespace UnityEngine.CustomComponents
         private ParticleSystem[] horrayParticles;
         [SerializeField]
         private ClearUI clearUI;
-        [SerializeField]
-        private RectTransform grid;
-        [SerializeField]
-        private GridLayout gridLayout;
         private float durationTime;
 
         [Header("Setting")]
@@ -40,8 +36,6 @@ namespace UnityEngine.CustomComponents
         public Image GoalCat { get => (Image)goal.GetDisplay("catIcon"); }
         public Text GoalPoint { get => (Text)goal.GetDisplay("catPoint"); }
         public Text Money { get => (Text)money.GetDisplay("money"); }
-        public RectTransform Grid { get => grid; }
-        public GridLayout Layout { get => gridLayout; }
         public ParticleSystem[] HorrayParticles { get => horrayParticles; }
         #endregion
         protected override void Awake()
