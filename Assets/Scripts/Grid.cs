@@ -39,9 +39,6 @@
         // Awake is called when the script instance is being loaded.
         protected override void Awake()
         {
-            #region Singleton
-            base.Awake();
-            #endregion
             for (int i = tiles.GetLength(0) - 1; i >= 0; i--)
             {
                 for (int j = 0; j < tiles.GetLength(1); j++)
@@ -49,6 +46,9 @@
                     tiles[i, j] = Instantiate(uIBlockprefabs, uIGrid).transform;
                 }
             }
+            #region Singleton
+            base.Awake();
+            #endregion
         }
 
         // Start is called before the first frame update

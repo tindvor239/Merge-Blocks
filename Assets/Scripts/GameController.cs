@@ -87,8 +87,8 @@ namespace UnityEngine.CustomComponents
 
         private void Start()
         {
-            lastX = Grid.GetLimitX(Mathf.RoundToInt(Grid.Column / 2));
             SpawnCatsOnStart();
+            lastX = Grid.GetLimitX(Mathf.RoundToInt(Grid.Column / 2));
             Invoke("SetNextListPos", 0.1f);
         }
         // Update is called once per frame

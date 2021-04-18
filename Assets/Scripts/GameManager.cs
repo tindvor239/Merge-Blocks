@@ -7,6 +7,8 @@ namespace UnityEngine.CustomComponents
     public class GameManager : Singleton<GameManager>
     {
         private static GameState gameState = GameState.mainMenu;
+        private static float defaultScreenWidth = 720f, defaultScreenHeight = 1280f;
+        private static float resolutionRatio;
         private static uint startExperience = 100;
         private static uint percentPerLevel = 44;
         private static uint currentExperience = 0;
@@ -16,12 +18,12 @@ namespace UnityEngine.CustomComponents
         private List<Sprite> catImages = new List<Sprite>();
         [SerializeField]
         private RectTransform screen;
-        [SerializeField]
-        private RectTransform grid;
 
         public delegate GameState OnStateChangeDelegate();
         public event OnStateChangeDelegate onStateChange;
-
+        // Width Ratio = Screen Width / Object Width.
+        // Height Ratio = Screen Height / Object Height.
+        // Ratio = Width Ratio < Height Ratio ? Width Ratio : Height Ratio;
         #region Properties
         public static GameState GameState { get => gameState; set => gameState = value; }
         public static uint CurrentLevel
@@ -87,6 +89,21 @@ namespace UnityEngine.CustomComponents
         }
         #endregion
         // Start is called before the first frame update
+        protected override void Awake()
+        {
+            base.Awake();
+            float widthRatio = defaultScreenWidth / screen.rect.width;
+            float heightRatio = defaultScreenHeight / screen.rect.height;
+            UIManager.Instance.Grid.GetComponent<GridLayout>();
+            if(widthRatio < 0 || heightRatio < 0)
+            {
+                resolutionRatio = widthRatio < heightRatio ? widthRatio : heightRatio;
+            }
+            else
+            {
+                resolutionRatio = 1f;
+            }
+        }
         private void Start()
         {
             MainMenu();
